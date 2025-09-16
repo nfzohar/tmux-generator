@@ -1,34 +1,33 @@
 <template>
-  <div class="flex h-screen bg-gray-50 dark:bg-gray-900">
+  <div class="flex h-screen bg-gray-50 dark:bg-gray-900 text-black dark:text-white">
     <!-- Sidebar -->
-    <div class="w-80 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 p-6 overflow-y-auto">
+    <div
+      class="w-80 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 p-6 overflow-y-auto"
+    >
       <div class="space-y-6">
         <div>
-          <div class="flex items-center justify-between mb-2">
-            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">tmux Builder</h1>
-            <button
-              @click="toggleTheme"
-              class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-            >
-              <component :is="isDark ? SunIcon : MoonIcon" class="w-4 h-4" />
-            </button>
-          </div>
-          <p class="text-sm text-gray-600 dark:text-gray-400">Visually create tmux layouts and export as scripts</p>
+          <h1 class="text-2xl font-bold text-gray-900 dark:text-white capitalize" v-text="title" />
+          <p
+            class="text-sm text-gray-600 dark:text-gray-400"
+            v-text="'Visually create tmux layouts and export as scripts'"
+          />
         </div>
 
         <hr class="border-gray-200 dark:border-gray-700" />
 
         <div class="space-y-4">
           <div>
-            <label for="session-name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Session Name
-            </label>
+            <label
+              for="session-name"
+              class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+              v-text="'Session Name'"
+            />
             <input
-              id="session-name"
               v-model="sessionName"
+              id="session-name"
               type="text"
               class="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              placeholder="my-session"
+              placeholder="My Session"
             />
           </div>
 
@@ -39,13 +38,18 @@
               type="checkbox"
               class="rounded border-gray-300 dark:border-gray-600"
             />
-            <label for="mouse-enabled" class="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer">
+            <label
+              for="mouse-enabled"
+              class="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer"
+            >
               Enable mouse controls
             </label>
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Layout Type</label>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+              >Layout Type</label
+            >
             <div class="flex gap-2 mt-2">
               <button
                 @click="changeLayout('horizontal')"
@@ -84,9 +88,14 @@
               </button>
             </div>
 
-            <div v-if="selectedPane" class="p-3 mb-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md">
+            <div
+              v-if="selectedPane"
+              class="p-3 mb-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md"
+            >
               <div class="flex items-center justify-between mb-2">
-                <span class="text-sm font-medium text-blue-700 dark:text-blue-300">Selected Pane Actions</span>
+                <span class="text-sm font-medium text-blue-700 dark:text-blue-300"
+                  >Selected Pane Actions</span
+                >
                 <CogIcon class="w-4 h-4 text-blue-600 dark:text-blue-400" />
               </div>
               <div class="flex gap-2">
@@ -131,7 +140,9 @@
                 <div class="space-y-3">
                   <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2">
-                      <GripVerticalIcon class="w-3 h-3 text-gray-400 cursor-grab active:cursor-grabbing" />
+                      <GripVerticalIcon
+                        class="w-3 h-3 text-gray-400 cursor-grab active:cursor-grabbing"
+                      />
                       <span
                         :class="[
                           'px-2 py-1 text-xs rounded-full',
@@ -200,12 +211,16 @@
                     </div>
 
                     <div v-if="selectedPane === pane.id && showTemplates" class="mt-3">
-                      <div class="p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md">
+                      <div
+                        class="p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md"
+                      >
                         <div class="flex items-center gap-2 mb-3">
                           <BookOpenIcon class="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                          <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Command Templates</span>
+                          <span class="text-sm font-medium text-gray-700 dark:text-gray-300"
+                            >Command Templates</span
+                          >
                         </div>
-                        
+
                         <div class="mb-3">
                           <select
                             v-model="templateCategory"
@@ -226,8 +241,12 @@
                             @click="applyTemplate(template.command)"
                             class="w-full text-left p-2 text-xs bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
                           >
-                            <div class="font-medium text-gray-900 dark:text-white">{{ template.name }}</div>
-                            <div class="text-gray-500 dark:text-gray-400 font-mono">{{ template.command }}</div>
+                            <div class="font-medium text-gray-900 dark:text-white">
+                              {{ template.name }}
+                            </div>
+                            <div class="text-gray-500 dark:text-gray-400 font-mono">
+                              {{ template.command }}
+                            </div>
                           </button>
                         </div>
                       </div>
@@ -247,12 +266,14 @@
         <div class="flex items-center justify-between mb-6">
           <div class="flex items-center gap-4">
             <TerminalIcon class="w-6 h-6 text-blue-600 dark:text-blue-400" />
-            <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Layout Preview: {{ currentWindow?.name }}</h2>
+            <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
+              Layout Preview: {{ currentWindow?.name }}
+            </h2>
             <span
               v-if="selectedPane"
               class="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-full"
             >
-              Selected: {{ currentWindow?.panes?.find(p => p.id === selectedPane)?.name }}
+              Selected: {{ currentWindow?.panes?.find((p) => p.id === selectedPane)?.name }}
             </span>
           </div>
 
@@ -266,7 +287,9 @@
         </div>
 
         <!-- Layout Preview -->
-        <div class="flex-1 p-6 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
+        <div
+          class="flex-1 p-6 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg"
+        >
           <div class="h-full bg-gray-100 dark:bg-gray-900 rounded-lg p-4">
             <div
               v-if="currentWindow"
@@ -275,15 +298,13 @@
                 currentWindow.layout === 'horizontal' ? 'flex flex-row' : 'flex flex-col'
               ]"
             >
-              <div
-                v-for="(pane, index) in rootPanes"
-                :key="pane.id"
-                class="flex-1 flex gap-2"
-              >
+              <div v-for="(pane, index) in rootPanes" :key="pane.id" class="flex-1 flex gap-2">
                 <div
                   :class="[
                     'bg-white dark:bg-gray-800 border-2 rounded-md p-4 min-h-[120px] flex flex-col cursor-pointer transition-all duration-200',
-                    childPanes.filter(p => p.parentId === pane.id).length > 0 ? 'flex-1' : 'w-full',
+                    childPanes.filter((p) => p.parentId === pane.id).length > 0
+                      ? 'flex-1'
+                      : 'w-full',
                     selectedPane === pane.id
                       ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
                       : dragOverPane === pane.id
@@ -301,17 +322,23 @@
                 >
                   <div class="flex items-center justify-between mb-3">
                     <div class="flex items-center gap-2">
-                      <GripVerticalIcon class="w-3 h-3 text-gray-400 cursor-grab active:cursor-grabbing" />
+                      <GripVerticalIcon
+                        class="w-3 h-3 text-gray-400 cursor-grab active:cursor-grabbing"
+                      />
                       <div
                         :class="[
                           'w-3 h-3 rounded-full',
                           selectedPane === pane.id ? 'bg-blue-500' : 'bg-gray-400'
                         ]"
                       ></div>
-                      <span class="text-sm font-medium text-gray-900 dark:text-white">{{ pane.name }}</span>
+                      <span class="text-sm font-medium text-gray-900 dark:text-white">{{
+                        pane.name
+                      }}</span>
                     </div>
                     <div class="flex items-center gap-2">
-                      <span class="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-full">
+                      <span
+                        class="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-full"
+                      >
                         {{ index + 1 }}
                       </span>
                       <div v-if="selectedPane === pane.id" class="flex gap-1">
@@ -331,24 +358,35 @@
                     </div>
                   </div>
 
-                  <div class="flex-1 bg-gray-50 dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 p-3">
-                    <code v-if="pane.command" class="text-xs font-mono text-gray-600 dark:text-gray-400">
+                  <div
+                    class="flex-1 bg-gray-50 dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 p-3"
+                  >
+                    <code
+                      v-if="pane.command"
+                      class="text-xs font-mono text-gray-600 dark:text-gray-400"
+                    >
                       $ {{ pane.command }}
                     </code>
-                    <span v-else class="text-xs text-gray-400 dark:text-gray-500 italic">No command set</span>
+                    <span v-else class="text-xs text-gray-400 dark:text-gray-500 italic"
+                      >No command set</span
+                    >
                   </div>
                 </div>
 
                 <!-- Render split panes -->
                 <div
-                  v-if="childPanes.filter(p => p.parentId === pane.id).length > 0"
+                  v-if="childPanes.filter((p) => p.parentId === pane.id).length > 0"
                   :class="[
                     'flex-1 flex gap-2',
-                    childPanes.find(p => p.parentId === pane.id)?.splitDirection === 'horizontal' ? 'flex-row' : 'flex-col'
+                    childPanes.find((p) => p.parentId === pane.id)?.splitDirection === 'horizontal'
+                      ? 'flex-row'
+                      : 'flex-col'
                   ]"
                 >
                   <div
-                    v-for="(splitPane, splitIndex) in childPanes.filter(p => p.parentId === pane.id)"
+                    v-for="(splitPane, splitIndex) in childPanes.filter(
+                      (p) => p.parentId === pane.id
+                    )"
                     :key="splitPane.id"
                     :class="[
                       'flex-1 bg-white dark:bg-gray-800 border-2 rounded-md p-4 min-h-[120px] flex flex-col cursor-pointer transition-all duration-200',
@@ -369,25 +407,38 @@
                   >
                     <div class="flex items-center justify-between mb-3">
                       <div class="flex items-center gap-2">
-                        <GripVerticalIcon class="w-3 h-3 text-gray-400 cursor-grab active:cursor-grabbing" />
+                        <GripVerticalIcon
+                          class="w-3 h-3 text-gray-400 cursor-grab active:cursor-grabbing"
+                        />
                         <div
                           :class="[
                             'w-3 h-3 rounded-full',
                             selectedPane === splitPane.id ? 'bg-blue-500' : 'bg-gray-400'
                           ]"
                         ></div>
-                        <span class="text-sm font-medium text-gray-900 dark:text-white">{{ splitPane.name }}</span>
+                        <span class="text-sm font-medium text-gray-900 dark:text-white">{{
+                          splitPane.name
+                        }}</span>
                       </div>
-                      <span class="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-full">
+                      <span
+                        class="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-full"
+                      >
                         {{ index + 1 }}.{{ splitIndex + 1 }}
                       </span>
                     </div>
 
-                    <div class="flex-1 bg-gray-50 dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 p-3">
-                      <code v-if="splitPane.command" class="text-xs font-mono text-gray-600 dark:text-gray-400">
+                    <div
+                      class="flex-1 bg-gray-50 dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 p-3"
+                    >
+                      <code
+                        v-if="splitPane.command"
+                        class="text-xs font-mono text-gray-600 dark:text-gray-400"
+                      >
                         $ {{ splitPane.command }}
                       </code>
-                      <span v-else class="text-xs text-gray-400 dark:text-gray-500 italic">No command set</span>
+                      <span v-else class="text-xs text-gray-400 dark:text-gray-500 italic"
+                        >No command set</span
+                      >
                     </div>
                   </div>
                 </div>
@@ -396,11 +447,13 @@
           </div>
         </div>
 
-        <div class="mt-4 p-4 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
+        <div
+          class="mt-4 p-4 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg"
+        >
           <p class="text-sm text-gray-600 dark:text-gray-400">
-            <strong>Instructions:</strong> Click on a pane to select it, drag panes to reorder them, use split buttons
-            to create new panes. Use command templates for quick setup or write custom commands. Export generates
-            executable bash scripts.
+            <strong>Instructions:</strong> Click on a pane to select it, drag panes to reorder them,
+            use split buttons to create new panes. Use command templates for quick setup or write
+            custom commands. Export generates executable bash scripts.
           </p>
         </div>
       </div>
@@ -417,7 +470,9 @@
         @click.stop
       >
         <div class="flex items-center justify-between mb-4">
-          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Export tmux Configuration</h3>
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+            Export tmux Configuration
+          </h3>
           <button
             @click="showExportDialog = false"
             class="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
@@ -443,9 +498,13 @@
             </button>
           </div>
 
-          <div class="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+          <div
+            class="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-4"
+          >
             <div class="flex items-center justify-between mb-2">
-              <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Generated Script</span>
+              <span class="text-sm font-medium text-gray-700 dark:text-gray-300"
+                >Generated Script</span
+              >
               <button
                 @click="copyToClipboard(generatedScript)"
                 class="flex items-center gap-1 px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
@@ -454,7 +513,10 @@
                 Copy
               </button>
             </div>
-            <pre class="text-xs font-mono text-gray-800 dark:text-gray-200 whitespace-pre-wrap overflow-x-auto">{{ generatedScript }}</pre>
+            <pre
+              class="text-xs font-mono text-gray-800 dark:text-gray-200 whitespace-pre-wrap overflow-x-auto"
+              >{{ generatedScript }}</pre
+            >
           </div>
         </div>
       </div>
@@ -465,6 +527,9 @@
 <script>
 export default {
   name: 'TmuxLayoutBuilder',
+
+  components: { TheHeader },
+
   data() {
     return {
       windows: [
@@ -487,18 +552,42 @@ export default {
       selectedExportFormat: 'bash',
       isDark: false,
       commandTemplates: [
-        { name: 'Node.js Development Server', command: 'cd ~/project && npm run dev', category: 'development' },
-        { name: 'Python Flask Server', command: 'cd ~/project && python app.py', category: 'development' },
-        { name: 'React Development', command: 'cd ~/project && npm start', category: 'development' },
-        { name: 'Vue.js Development', command: 'cd ~/project && npm run serve', category: 'development' },
+        {
+          name: 'Node.js Development Server',
+          command: 'cd ~/project && npm run dev',
+          category: 'development'
+        },
+        {
+          name: 'Python Flask Server',
+          command: 'cd ~/project && python app.py',
+          category: 'development'
+        },
+        {
+          name: 'React Development',
+          command: 'cd ~/project && npm start',
+          category: 'development'
+        },
+        {
+          name: 'Vue.js Development',
+          command: 'cd ~/project && npm run serve',
+          category: 'development'
+        },
         { name: 'System Monitor', command: 'htop', category: 'system' },
         { name: 'File Manager', command: 'ranger', category: 'system' },
         { name: 'Git Status Watch', command: 'watch -n 2 git status', category: 'development' },
         { name: 'MySQL Client', command: 'mysql -u root -p', category: 'database' },
         { name: 'PostgreSQL Client', command: 'psql -U postgres', category: 'database' },
         { name: 'Redis CLI', command: 'redis-cli', category: 'database' },
-        { name: 'Nginx Access Logs', command: 'tail -f /var/log/nginx/access.log', category: 'web' },
-        { name: 'Apache Error Logs', command: 'tail -f /var/log/apache2/error.log', category: 'web' }
+        {
+          name: 'Nginx Access Logs',
+          command: 'tail -f /var/log/nginx/access.log',
+          category: 'web'
+        },
+        {
+          name: 'Apache Error Logs',
+          command: 'tail -f /var/log/apache2/error.log',
+          category: 'web'
+        }
       ],
       exportFormats: [
         { id: 'bash', name: 'Bash Script' },
@@ -507,21 +596,25 @@ export default {
       ]
     }
   },
+
   computed: {
+    title() {
+      return document?.title
+    },
     currentWindow() {
-      return this.windows.find(w => w.id === this.activeWindow)
+      return this.windows.find((w) => w.id === this.activeWindow)
     },
     rootPanes() {
-      return this.currentWindow?.panes?.filter(p => !p.parentId) || []
+      return this.currentWindow?.panes?.filter((p) => !p.parentId) || []
     },
     childPanes() {
-      return this.currentWindow?.panes?.filter(p => p.parentId) || []
+      return this.currentWindow?.panes?.filter((p) => p.parentId) || []
     },
     filteredTemplates() {
       if (this.templateCategory === 'all') {
         return this.commandTemplates
       }
-      return this.commandTemplates.filter(t => t.category === this.templateCategory)
+      return this.commandTemplates.filter((t) => t.category === this.templateCategory)
     },
     generatedScript() {
       if (this.selectedExportFormat === 'bash') {
@@ -535,75 +628,89 @@ export default {
     // Font Awesome Icons as inline SVG components
     PlusIcon() {
       return {
-        template: '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"></path></svg>'
+        template:
+          '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"></path></svg>'
       }
     },
     ArrowDownTrayIcon() {
       return {
-        template: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>'
+        template:
+          '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>'
       }
     },
     TerminalIcon() {
       return {
-        template: '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>'
+        template:
+          '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>'
       }
     },
     XMarkIcon() {
       return {
-        template: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>'
+        template:
+          '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>'
       }
     },
     ArrowsRightLeftIcon() {
       return {
-        template: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16l-4-4m0 0l4-4m-4 4h18m-4-4l4 4m0 0l-4 4"></path></svg>'
+        template:
+          '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16l-4-4m0 0l4-4m-4 4h18m-4-4l4 4m0 0l-4 4"></path></svg>'
       }
     },
     ArrowsUpDownIcon() {
       return {
-        template: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path></svg>'
+        template:
+          '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path></svg>'
       }
     },
     CogIcon() {
       return {
-        template: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>'
+        template:
+          '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>'
       }
     },
     BookOpenIcon() {
       return {
-        template: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>'
+        template:
+          '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>'
       }
     },
     ExclamationTriangleIcon() {
       return {
-        template: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"></path></svg>'
+        template:
+          '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"></path></svg>'
       }
     },
     GripVerticalIcon() {
       return {
-        template: '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"></path></svg>'
+        template:
+          '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"></path></svg>'
       }
     },
     DocumentDuplicateIcon() {
       return {
-        template: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>'
+        template:
+          '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>'
       }
     },
     MoonIcon() {
       return {
-        template: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>'
+        template:
+          '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>'
       }
     },
     SunIcon() {
       return {
-        template: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>'
+        template:
+          '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>'
       }
     }
   },
+
   mounted() {
-    // Initialize theme
     this.isDark = window.matchMedia('(prefers-color-scheme: dark)').matches
     this.updateTheme()
   },
+
   methods: {
     splitPane(paneId, direction) {
       if (!this.currentWindow) return
@@ -616,10 +723,8 @@ export default {
         splitDirection: direction
       }
 
-      this.windows = this.windows.map(w => 
-        w.id === this.activeWindow 
-          ? { ...w, panes: [...w.panes, newPane] }
-          : w
+      this.windows = this.windows.map((w) =>
+        w.id === this.activeWindow ? { ...w, panes: [...w.panes, newPane] } : w
       )
     },
     addPane() {
@@ -631,19 +736,15 @@ export default {
         name: `pane-${this.currentWindow.panes.length + 1}`
       }
 
-      this.windows = this.windows.map(w => 
-        w.id === this.activeWindow 
-          ? { ...w, panes: [...w.panes, newPane] }
-          : w
+      this.windows = this.windows.map((w) =>
+        w.id === this.activeWindow ? { ...w, panes: [...w.panes, newPane] } : w
       )
     },
     removePane(paneId) {
       if (!this.currentWindow || this.currentWindow.panes.length <= 1) return
 
-      this.windows = this.windows.map(w => 
-        w.id === this.activeWindow 
-          ? { ...w, panes: w.panes.filter(p => p.id !== paneId) }
-          : w
+      this.windows = this.windows.map((w) =>
+        w.id === this.activeWindow ? { ...w, panes: w.panes.filter((p) => p.id !== paneId) } : w
       )
 
       if (this.selectedPane === paneId) {
@@ -651,19 +752,17 @@ export default {
       }
     },
     updatePane(paneId, updates) {
-      this.windows = this.windows.map(w => 
-        w.id === this.activeWindow 
+      this.windows = this.windows.map((w) =>
+        w.id === this.activeWindow
           ? {
               ...w,
-              panes: w.panes.map(p => p.id === paneId ? { ...p, ...updates } : p)
+              panes: w.panes.map((p) => (p.id === paneId ? { ...p, ...updates } : p))
             }
           : w
       )
     },
     changeLayout(layout) {
-      this.windows = this.windows.map(w => 
-        w.id === this.activeWindow ? { ...w, layout } : w
-      )
+      this.windows = this.windows.map((w) => (w.id === this.activeWindow ? { ...w, layout } : w))
     },
     setSelectedPane(paneId) {
       this.selectedPane = paneId
@@ -690,13 +789,13 @@ export default {
       }
 
       const newPanes = [...this.currentWindow.panes]
-      const draggedIndex = newPanes.findIndex(p => p.id === this.draggedPane)
-      const targetIndex = newPanes.findIndex(p => p.id === targetPaneId)
+      const draggedIndex = newPanes.findIndex((p) => p.id === this.draggedPane)
+      const targetIndex = newPanes.findIndex((p) => p.id === targetPaneId)
 
       const [removed] = newPanes.splice(draggedIndex, 1)
       newPanes.splice(targetIndex, 0, removed)
 
-      this.windows = this.windows.map(w => 
+      this.windows = this.windows.map((w) =>
         w.id === this.activeWindow ? { ...w, panes: newPanes } : w
       )
 
@@ -708,7 +807,7 @@ export default {
         return { isValid: true }
       }
 
-      if (command.includes('&&') && command.split('&&').some(part => !part.trim())) {
+      if (command.includes('&&') && command.split('&&').some((part) => !part.trim())) {
         return { isValid: false, message: 'Empty command after &&' }
       }
 
@@ -727,19 +826,19 @@ export default {
     generateBashScript() {
       let script = '#!/bin/bash\n\n'
       script += `# tmux session: ${this.sessionName}\n\n`
-      
+
       if (this.mouseEnabled) {
         script += 'tmux set -g mouse on\n'
       }
-      
+
       script += `tmux new-session -d -s "${this.sessionName}"\n\n`
-      
+
       if (this.currentWindow && this.currentWindow.panes.length > 0) {
         const firstPane = this.currentWindow.panes[0]
         if (firstPane.command) {
           script += `tmux send-keys -t "${this.sessionName}:0.0" "${firstPane.command}" Enter\n`
         }
-        
+
         for (let i = 1; i < this.currentWindow.panes.length; i++) {
           const pane = this.currentWindow.panes[i]
           const splitDirection = pane.splitDirection === 'vertical' ? '-v' : '-h'
@@ -749,25 +848,25 @@ export default {
           }
         }
       }
-      
+
       script += `\ntmux attach-session -t "${this.sessionName}"\n`
       return script
     },
     generateManualCommands() {
       let commands = `# Manual tmux commands for session: ${this.sessionName}\n\n`
-      
+
       if (this.mouseEnabled) {
         commands += 'tmux set -g mouse on\n'
       }
-      
+
       commands += `tmux new-session -d -s "${this.sessionName}"\n`
-      
+
       if (this.currentWindow && this.currentWindow.panes.length > 0) {
         const firstPane = this.currentWindow.panes[0]
         if (firstPane.command) {
           commands += `tmux send-keys -t "${this.sessionName}:0.0" "${firstPane.command}" Enter\n`
         }
-        
+
         for (let i = 1; i < this.currentWindow.panes.length; i++) {
           const pane = this.currentWindow.panes[i]
           const splitDirection = pane.splitDirection === 'vertical' ? '-v' : '-h'
@@ -777,16 +876,20 @@ export default {
           }
         }
       }
-      
+
       commands += `tmux attach-session -t "${this.sessionName}"\n`
       return commands
     },
     generateJsonConfig() {
-      return JSON.stringify({
-        sessionName: this.sessionName,
-        mouseEnabled: this.mouseEnabled,
-        windows: this.windows
-      }, null, 2)
+      return JSON.stringify(
+        {
+          sessionName: this.sessionName,
+          mouseEnabled: this.mouseEnabled,
+          windows: this.windows
+        },
+        null,
+        2
+      )
     },
     async copyToClipboard(text) {
       try {
@@ -810,31 +913,3 @@ export default {
   }
 }
 </script>
-
-<style scoped>
-/* Custom scrollbar styles */
-::-webkit-scrollbar {
-  width: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #cbd5e0;
-  border-radius: 3px;
-}
-
-.dark ::-webkit-scrollbar-thumb {
-  background: #4a5568;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #a0aec0;
-}
-
-.dark ::-webkit-scrollbar-thumb:hover {
-  background: #2d3748;
-}
-</style>

@@ -1,344 +1,460 @@
 <template>
-  <div class="min-h-screen bg-background text-foreground">
-    <!-- Theme Toggle -->
-    <div class="fixed top-4 right-4 z-50">
-      <button
-        @click="toggleTheme"
-        class="p-2 rounded-md border border-border bg-background hover:bg-accent transition-colors"
-      >
-        <SunIcon
-          v-if="theme === 'dark'"
-          class="h-4 w-4 text-muted-foreground hover:text-foreground transition-colors"
-        />
-        <MoonIcon
-          v-else
-          class="h-4 w-4 text-muted-foreground hover:text-foreground transition-colors"
-        />
-      </button>
-    </div>
-
-    <!-- Export Dialog -->
-    <div
-      v-if="showExportDialog"
-      class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-    >
-      <div
-        class="bg-background border border-border rounded-lg w-full max-w-4xl max-h-[90vh] overflow-hidden"
-      >
-        <div
-          class="flex items-center justify-between p-4 border-b border-border"
-        >
-          <div class="flex items-center gap-2">
-            <FileTextIcon class="w-5 h-5" />
-            <h2 class="text-lg font-semibold">Export Layout</h2>
-          </div>
-          <button
-            @click="showExportDialog = false"
-            class="p-1 hover:bg-accent rounded"
-          >
-            <XIcon class="w-4 h-4" />
-          </button>
-        </div>
-
-        <div class="p-4">
-          <div class="flex border-b border-border mb-4">
+  <div class="flex h-screen bg-gray-50 dark:bg-gray-900">
+    <!-- Sidebar -->
+    <div class="w-80 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 p-6 overflow-y-auto">
+      <div class="space-y-6">
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">tmux Builder</h1>
             <button
-              v-for="tab in exportTabs"
-              :key="tab.value"
-              @click="activeExportTab = tab.value"
-              :class="[
-                'flex items-center gap-2 px-4 py-2 border-b-2 transition-colors',
-                activeExportTab === tab.value
-                  ? 'border-primary text-primary'
-                  : 'border-transparent text-muted-foreground hover:text-foreground',
-              ]"
+              @click="toggleTheme"
+              class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
             >
-              <component :is="tab.icon" class="w-4 h-4" />
-              {{ tab.label }}
+              <component :is="isDark ? SunIcon : MoonIcon" class="w-4 h-4" />
             </button>
           </div>
+          <p class="text-sm text-gray-600 dark:text-gray-400">Visually create tmux layouts and export as scripts</p>
+        </div>
 
-          <div class="space-y-4">
-            <!-- Bash Script Tab -->
-            <div v-if="activeExportTab === 'script'">
-              <div class="flex items-center justify-between mb-2">
-                <h3 class="font-medium">Bash Script</h3>
-                <div class="flex gap-2">
-                  <button
-                    @click="copyToClipboard(bashScript)"
-                    class="flex items-center gap-2 px-3 py-1 text-sm bg-secondary hover:bg-secondary/80 rounded transition-colors"
-                  >
-                    <CheckCircleIcon v-if="copied" class="w-4 h-4" />
-                    <CopyIcon v-else class="w-4 h-4" />
-                    Copy
-                  </button>
-                  <button
-                    @click="downloadFile(bashScript, 'tmux-layout.sh')"
-                    class="flex items-center gap-2 px-3 py-1 text-sm bg-primary text-primary-foreground hover:bg-primary/90 rounded transition-colors"
-                  >
-                    <DownloadIcon class="w-4 h-4" />
-                    Download
-                  </button>
-                </div>
-              </div>
-              <pre
-                class="bg-muted p-4 rounded-md text-sm overflow-auto max-h-96 font-mono"
-                >{{ bashScript }}</pre
+        <hr class="border-gray-200 dark:border-gray-700" />
+
+        <div class="space-y-4">
+          <div>
+            <label for="session-name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Session Name
+            </label>
+            <input
+              id="session-name"
+              v-model="sessionName"
+              type="text"
+              class="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              placeholder="my-session"
+            />
+          </div>
+
+          <div class="flex items-center space-x-2">
+            <input
+              id="mouse-enabled"
+              v-model="mouseEnabled"
+              type="checkbox"
+              class="rounded border-gray-300 dark:border-gray-600"
+            />
+            <label for="mouse-enabled" class="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer">
+              Enable mouse controls
+            </label>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Layout Type</label>
+            <div class="flex gap-2 mt-2">
+              <button
+                @click="changeLayout('horizontal')"
+                :class="[
+                  'px-3 py-1 text-sm rounded-md transition-colors',
+                  currentWindow?.layout === 'horizontal'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                ]"
               >
+                Horizontal
+              </button>
+              <button
+                @click="changeLayout('vertical')"
+                :class="[
+                  'px-3 py-1 text-sm rounded-md transition-colors',
+                  currentWindow?.layout === 'vertical'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                ]"
+              >
+                Vertical
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Panes</label>
+              <button
+                @click="addPane"
+                class="flex items-center gap-1 px-2 py-1 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              >
+                <PlusIcon class="w-4 h-4" />
+                Add
+              </button>
             </div>
 
-            <!-- Commands Tab -->
-            <div v-if="activeExportTab === 'commands'">
+            <div v-if="selectedPane" class="p-3 mb-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md">
               <div class="flex items-center justify-between mb-2">
-                <h3 class="font-medium">Manual Commands</h3>
-                <div class="flex gap-2">
-                  <button
-                    @click="copyToClipboard(manualCommands)"
-                    class="flex items-center gap-2 px-3 py-1 text-sm bg-secondary hover:bg-secondary/80 rounded transition-colors"
-                  >
-                    <CheckCircleIcon v-if="copied" class="w-4 h-4" />
-                    <CopyIcon v-else class="w-4 h-4" />
-                    Copy
-                  </button>
-                  <button
-                    @click="downloadFile(manualCommands, 'tmux-commands.txt')"
-                    class="flex items-center gap-2 px-3 py-1 text-sm bg-primary text-primary-foreground hover:bg-primary/90 rounded transition-colors"
-                  >
-                    <DownloadIcon class="w-4 h-4" />
-                    Download
-                  </button>
-                </div>
+                <span class="text-sm font-medium text-blue-700 dark:text-blue-300">Selected Pane Actions</span>
+                <CogIcon class="w-4 h-4 text-blue-600 dark:text-blue-400" />
               </div>
-              <pre
-                class="bg-muted p-4 rounded-md text-sm overflow-auto max-h-96 font-mono"
-                >{{ manualCommands }}</pre
-              >
+              <div class="flex gap-2">
+                <button
+                  @click="splitPane(selectedPane, 'horizontal')"
+                  class="flex-1 flex items-center justify-center gap-1 px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                >
+                  <ArrowsRightLeftIcon class="w-3 h-3" />
+                  Split H
+                </button>
+                <button
+                  @click="splitPane(selectedPane, 'vertical')"
+                  class="flex-1 flex items-center justify-center gap-1 px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                >
+                  <ArrowsUpDownIcon class="w-3 h-3" />
+                  Split V
+                </button>
+              </div>
             </div>
 
-            <!-- Config Tab -->
-            <div v-if="activeExportTab === 'config'">
-              <div class="flex items-center justify-between mb-2">
-                <h3 class="font-medium">JSON Configuration</h3>
-                <div class="flex gap-2">
-                  <button
-                    @click="copyToClipboard(jsonConfig)"
-                    class="flex items-center gap-2 px-3 py-1 text-sm bg-secondary hover:bg-secondary/80 rounded transition-colors"
-                  >
-                    <CheckCircleIcon v-if="copied" class="w-4 h-4" />
-                    <CopyIcon v-else class="w-4 h-4" />
-                    Copy
-                  </button>
-                  <button
-                    @click="downloadFile(jsonConfig, 'tmux-config.json')"
-                    class="flex items-center gap-2 px-3 py-1 text-sm bg-primary text-primary-foreground hover:bg-primary/90 rounded transition-colors"
-                  >
-                    <DownloadIcon class="w-4 h-4" />
-                    Download
-                  </button>
+            <div class="space-y-3">
+              <div
+                v-for="(pane, index) in currentWindow?.panes || []"
+                :key="pane.id"
+                :class="[
+                  'p-4 cursor-pointer transition-all duration-200 border rounded-md',
+                  selectedPane === pane.id
+                    ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-300 dark:border-blue-700'
+                    : dragOverPane === pane.id
+                      ? 'bg-blue-100 dark:bg-blue-900/30 border-blue-400 dark:border-blue-600 scale-105'
+                      : draggedPane === pane.id
+                        ? 'bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 opacity-50'
+                        : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'
+                ]"
+                @click="setSelectedPane(pane.id)"
+                draggable="true"
+                @dragstart="handleDragStart($event, pane.id)"
+                @dragover="handleDragOver($event, pane.id)"
+                @dragleave="handleDragLeave"
+                @drop="handleDrop($event, pane.id)"
+              >
+                <div class="space-y-3">
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                      <GripVerticalIcon class="w-3 h-3 text-gray-400 cursor-grab active:cursor-grabbing" />
+                      <span
+                        :class="[
+                          'px-2 py-1 text-xs rounded-full',
+                          selectedPane === pane.id
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                        ]"
+                      >
+                        {{ pane.parentId ? `Split ${index + 1}` : `Pane ${index + 1}` }}
+                      </span>
+                    </div>
+                    <button
+                      v-if="(currentWindow?.panes?.length || 0) > 1"
+                      @click.stop="removePane(pane.id)"
+                      class="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                    >
+                      <XMarkIcon class="w-3 h-3" />
+                    </button>
+                  </div>
+
+                  <div>
+                    <label class="block text-xs text-gray-500 dark:text-gray-400">Name</label>
+                    <input
+                      :value="pane.name"
+                      @input="updatePane(pane.id, { name: $event.target.value })"
+                      @click.stop
+                      type="text"
+                      class="mt-1 block w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      placeholder="pane-name"
+                    />
+                  </div>
+
+                  <div>
+                    <div class="flex items-center justify-between mb-1">
+                      <label class="text-xs text-gray-500 dark:text-gray-400">Command</label>
+                      <button
+                        v-if="selectedPane === pane.id"
+                        @click.stop="showTemplates = !showTemplates"
+                        class="flex items-center gap-1 px-2 py-1 text-xs text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
+                      >
+                        <BookOpenIcon class="w-3 h-3" />
+                        Templates
+                      </button>
+                    </div>
+
+                    <textarea
+                      :value="pane.command"
+                      @input="updatePane(pane.id, { command: $event.target.value })"
+                      @click.stop
+                      :class="[
+                        'mt-1 block w-full px-2 py-2 text-sm font-mono border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white',
+                        !validateCommand(pane.command).isValid
+                          ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
+                          : 'border-gray-300 dark:border-gray-600'
+                      ]"
+                      rows="3"
+                      placeholder="cd ~/project && npm start"
+                    ></textarea>
+
+                    <div
+                      v-if="!validateCommand(pane.command).isValid"
+                      class="flex items-center gap-1 mt-1 text-xs text-red-600 dark:text-red-400"
+                    >
+                      <ExclamationTriangleIcon class="w-3 h-3" />
+                      {{ validateCommand(pane.command).message }}
+                    </div>
+
+                    <div v-if="selectedPane === pane.id && showTemplates" class="mt-3">
+                      <div class="p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md">
+                        <div class="flex items-center gap-2 mb-3">
+                          <BookOpenIcon class="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                          <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Command Templates</span>
+                        </div>
+                        
+                        <div class="mb-3">
+                          <select
+                            v-model="templateCategory"
+                            class="block w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                          >
+                            <option value="all">All Categories</option>
+                            <option value="development">Development</option>
+                            <option value="system">System</option>
+                            <option value="database">Database</option>
+                            <option value="web">Web Servers</option>
+                          </select>
+                        </div>
+
+                        <div class="space-y-2 max-h-40 overflow-y-auto">
+                          <button
+                            v-for="template in filteredTemplates"
+                            :key="template.name"
+                            @click="applyTemplate(template.command)"
+                            class="w-full text-left p-2 text-xs bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+                          >
+                            <div class="font-medium text-gray-900 dark:text-white">{{ template.name }}</div>
+                            <div class="text-gray-500 dark:text-gray-400 font-mono">{{ template.command }}</div>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
-              <pre
-                class="bg-muted p-4 rounded-md text-sm overflow-auto max-h-96 font-mono"
-                >{{ jsonConfig }}</pre
-              >
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="container mx-auto p-6 max-w-7xl">
-      <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 h-[calc(100vh-3rem)]">
-        <!-- Layout Builder -->
-        <div class="lg:col-span-3 space-y-4">
-          <div class="flex items-center justify-between">
-            <h1 class="text-2xl font-bold">Tmux Layout Builder</h1>
-            <div class="flex gap-2">
-              <button
-                @click="addPane"
-                class="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/90 rounded-md transition-colors"
-              >
-                <PlusIcon class="w-4 h-4" />
-                Add Pane
-              </button>
-              <button
-                @click="showExportDialog = true"
-                class="flex items-center gap-2 px-4 py-2 bg-secondary hover:bg-secondary/80 rounded-md transition-colors"
-              >
-                <DownloadIcon class="w-4 h-4" />
-                Export
-              </button>
-            </div>
+    <!-- Main Canvas -->
+    <div class="flex-1 p-6">
+      <div class="h-full flex flex-col">
+        <div class="flex items-center justify-between mb-6">
+          <div class="flex items-center gap-4">
+            <TerminalIcon class="w-6 h-6 text-blue-600 dark:text-blue-400" />
+            <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Layout Preview: {{ currentWindow?.name }}</h2>
+            <span
+              v-if="selectedPane"
+              class="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-full"
+            >
+              Selected: {{ currentWindow?.panes?.find(p => p.id === selectedPane)?.name }}
+            </span>
           </div>
 
-          <!-- Layout Preview -->
-          <div
-            class="border border-border rounded-lg p-4 bg-card min-h-[400px]"
+          <button
+            @click="showExportDialog = true"
+            class="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
           >
-            <div
-              class="h-full"
-              :style="{ display: 'flex', flexDirection: rootDirection }"
-            >
-              <div
-                v-for="pane in rootPanes"
-                :key="pane.id"
-                :style="{ flex: pane.size }"
-                class="relative"
-              >
-                <PaneComponent
-                  :pane="pane"
-                  :selected-pane="selectedPane"
-                  :command-templates="commandTemplates"
-                  @select="selectPane"
-                  @split="splitPane"
-                  @update-command="updatePaneCommand"
-                  @drag-start="handleDragStart"
-                  @drag-over="handleDragOver"
-                  @drop="handleDrop"
-                />
-              </div>
-            </div>
-          </div>
-
-          <!-- Controls -->
-          <div class="flex gap-2 flex-wrap">
-            <button
-              @click="addPane"
-              class="flex items-center gap-2 px-3 py-2 bg-primary text-primary-foreground hover:bg-primary/90 rounded-md text-sm"
-            >
-              <PlusIcon class="w-4 h-4" />
-              Add Pane
-            </button>
-            <button
-              @click="resetLayout"
-              class="flex items-center gap-2 px-3 py-2 bg-secondary hover:bg-secondary/80 rounded-md text-sm"
-            >
-              <SettingsIcon class="w-4 h-4" />
-              Reset
-            </button>
-            <button
-              @click="selectedPane && splitPane(selectedPane, 'horizontal')"
-              :disabled="!selectedPane"
-              class="flex items-center gap-2 px-3 py-2 bg-accent hover:bg-accent/80 rounded-md text-sm disabled:opacity-50"
-            >
-              <SplitHorizontalIcon class="w-3 h-3" />
-              Split H
-            </button>
-            <button
-              @click="selectedPane && splitPane(selectedPane, 'vertical')"
-              :disabled="!selectedPane"
-              class="flex items-center gap-2 px-3 py-2 bg-accent hover:bg-accent/80 rounded-md text-sm disabled:opacity-50"
-            >
-              <SplitVerticalIcon class="w-3 h-3" />
-              Split V
-            </button>
-          </div>
+            <ArrowDownTrayIcon class="w-4 h-4" />
+            Export Script
+          </button>
         </div>
 
-        <!-- Command Templates Sidebar -->
-        <div class="space-y-4">
-          <div class="border border-border rounded-lg p-4 bg-card">
-            <h2 class="text-lg font-semibold mb-4">Command Templates</h2>
-
-            <!-- Search -->
-            <div class="mb-4">
-              <input
-                v-model="searchTerm"
-                type="text"
-                placeholder="Search templates..."
-                class="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-              />
-            </div>
-
-            <!-- Category Filter -->
-            <div class="mb-4">
-              <select
-                v-model="selectedCategory"
-                class="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-              >
-                <option value="">All Categories</option>
-                <option
-                  v-for="category in categories"
-                  :key="category"
-                  :value="category"
-                >
-                  {{ category.charAt(0).toUpperCase() + category.slice(1) }}
-                </option>
-              </select>
-            </div>
-
-            <!-- Templates List -->
-            <div class="space-y-2 max-h-96 overflow-y-auto">
+        <!-- Layout Preview -->
+        <div class="flex-1 p-6 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
+          <div class="h-full bg-gray-100 dark:bg-gray-900 rounded-lg p-4">
+            <div
+              v-if="currentWindow"
+              :class="[
+                'h-full gap-2',
+                currentWindow.layout === 'horizontal' ? 'flex flex-row' : 'flex flex-col'
+              ]"
+            >
               <div
-                v-for="template in filteredTemplates"
-                :key="template.id"
-                :draggable="true"
-                @dragstart="handleTemplateDragStart($event, template)"
-                class="p-3 border border-border rounded-md hover:bg-accent cursor-grab active:cursor-grabbing transition-colors"
+                v-for="(pane, index) in rootPanes"
+                :key="pane.id"
+                class="flex-1 flex gap-2"
               >
-                <div class="flex items-center gap-2 mb-1">
-                  <GripVerticalIcon class="w-3 h-3 text-muted-foreground" />
-                  <component :is="template.icon" />
-                  <span class="font-medium text-sm">{{ template.name }}</span>
+                <div
+                  :class="[
+                    'bg-white dark:bg-gray-800 border-2 rounded-md p-4 min-h-[120px] flex flex-col cursor-pointer transition-all duration-200',
+                    childPanes.filter(p => p.parentId === pane.id).length > 0 ? 'flex-1' : 'w-full',
+                    selectedPane === pane.id
+                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                      : dragOverPane === pane.id
+                        ? 'border-blue-400 bg-blue-100 dark:bg-blue-900/30 scale-105'
+                        : draggedPane === pane.id
+                          ? 'border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 opacity-50'
+                          : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600'
+                  ]"
+                  @click="setSelectedPane(pane.id)"
+                  draggable="true"
+                  @dragstart="handleDragStart($event, pane.id)"
+                  @dragover="handleDragOver($event, pane.id)"
+                  @dragleave="handleDragLeave"
+                  @drop="handleDrop($event, pane.id)"
+                >
+                  <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center gap-2">
+                      <GripVerticalIcon class="w-3 h-3 text-gray-400 cursor-grab active:cursor-grabbing" />
+                      <div
+                        :class="[
+                          'w-3 h-3 rounded-full',
+                          selectedPane === pane.id ? 'bg-blue-500' : 'bg-gray-400'
+                        ]"
+                      ></div>
+                      <span class="text-sm font-medium text-gray-900 dark:text-white">{{ pane.name }}</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <span class="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-full">
+                        {{ index + 1 }}
+                      </span>
+                      <div v-if="selectedPane === pane.id" class="flex gap-1">
+                        <button
+                          @click.stop="splitPane(pane.id, 'horizontal')"
+                          class="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                        >
+                          <ArrowsRightLeftIcon class="w-3 h-3" />
+                        </button>
+                        <button
+                          @click.stop="splitPane(pane.id, 'vertical')"
+                          class="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                        >
+                          <ArrowsUpDownIcon class="w-3 h-3" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="flex-1 bg-gray-50 dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 p-3">
+                    <code v-if="pane.command" class="text-xs font-mono text-gray-600 dark:text-gray-400">
+                      $ {{ pane.command }}
+                    </code>
+                    <span v-else class="text-xs text-gray-400 dark:text-gray-500 italic">No command set</span>
+                  </div>
                 </div>
-                <p class="text-xs text-muted-foreground mb-2">
-                  {{ template.description }}
-                </p>
-                <code class="text-xs bg-muted px-2 py-1 rounded font-mono">{{
-                  template.command
-                }}</code>
-                <div class="flex items-center justify-between mt-2">
-                  <span class="text-xs text-muted-foreground capitalize">{{
-                    template.category
-                  }}</span>
-                  <button
-                    v-if="selectedPane"
-                    @click="applyTemplate(template)"
-                    class="text-xs bg-primary text-primary-foreground px-2 py-1 rounded hover:bg-primary/90 transition-colors"
-                  >
-                    Apply
-                  </button>
+
+                <!-- Render split panes -->
+                <div
+                  v-if="childPanes.filter(p => p.parentId === pane.id).length > 0"
+                  :class="[
+                    'flex-1 flex gap-2',
+                    childPanes.find(p => p.parentId === pane.id)?.splitDirection === 'horizontal' ? 'flex-row' : 'flex-col'
+                  ]"
+                >
                   <div
-                    v-else
-                    class="flex items-center gap-1 text-xs text-muted-foreground"
+                    v-for="(splitPane, splitIndex) in childPanes.filter(p => p.parentId === pane.id)"
+                    :key="splitPane.id"
+                    :class="[
+                      'flex-1 bg-white dark:bg-gray-800 border-2 rounded-md p-4 min-h-[120px] flex flex-col cursor-pointer transition-all duration-200',
+                      selectedPane === splitPane.id
+                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                        : dragOverPane === splitPane.id
+                          ? 'border-blue-400 bg-blue-100 dark:bg-blue-900/30 scale-105'
+                          : draggedPane === splitPane.id
+                            ? 'border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 opacity-50'
+                            : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600'
+                    ]"
+                    @click="setSelectedPane(splitPane.id)"
+                    draggable="true"
+                    @dragstart="handleDragStart($event, splitPane.id)"
+                    @dragover="handleDragOver($event, splitPane.id)"
+                    @dragleave="handleDragLeave"
+                    @drop="handleDrop($event, splitPane.id)"
                   >
-                    <AlertCircleIcon class="w-3 h-3" />
-                    Select pane
+                    <div class="flex items-center justify-between mb-3">
+                      <div class="flex items-center gap-2">
+                        <GripVerticalIcon class="w-3 h-3 text-gray-400 cursor-grab active:cursor-grabbing" />
+                        <div
+                          :class="[
+                            'w-3 h-3 rounded-full',
+                            selectedPane === splitPane.id ? 'bg-blue-500' : 'bg-gray-400'
+                          ]"
+                        ></div>
+                        <span class="text-sm font-medium text-gray-900 dark:text-white">{{ splitPane.name }}</span>
+                      </div>
+                      <span class="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-full">
+                        {{ index + 1 }}.{{ splitIndex + 1 }}
+                      </span>
+                    </div>
+
+                    <div class="flex-1 bg-gray-50 dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 p-3">
+                      <code v-if="splitPane.command" class="text-xs font-mono text-gray-600 dark:text-gray-400">
+                        $ {{ splitPane.command }}
+                      </code>
+                      <span v-else class="text-xs text-gray-400 dark:text-gray-500 italic">No command set</span>
+                    </div>
                   </div>
                 </div>
               </div>
-
-              <div
-                v-if="filteredTemplates.length === 0"
-                class="text-center py-8 text-muted-foreground"
-              >
-                <BookOpenIcon class="w-8 h-8 mx-auto mb-2 opacity-50" />
-                <p class="text-sm">No templates found</p>
-              </div>
             </div>
           </div>
+        </div>
 
-          <!-- Selected Pane Info -->
-          <div
-            v-if="selectedPane"
-            class="border border-border rounded-lg p-4 bg-card"
+        <div class="mt-4 p-4 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
+          <p class="text-sm text-gray-600 dark:text-gray-400">
+            <strong>Instructions:</strong> Click on a pane to select it, drag panes to reorder them, use split buttons
+            to create new panes. Use command templates for quick setup or write custom commands. Export generates
+            executable bash scripts.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Export Dialog -->
+    <div
+      v-if="showExportDialog"
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+      @click="showExportDialog = false"
+    >
+      <div
+        class="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-2xl max-h-[80vh] overflow-y-auto"
+        @click.stop
+      >
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Export tmux Configuration</h3>
+          <button
+            @click="showExportDialog = false"
+            class="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
           >
-            <h3 class="font-semibold mb-2 flex items-center gap-2">
-              <TerminalIcon class="w-4 h-4" />
-              Selected Pane
-            </h3>
-            <div class="space-y-2 text-sm">
-              <div>
-                <span class="text-muted-foreground">ID:</span>
-                <span class="ml-2 font-mono">{{ selectedPaneData?.id }}</span>
-              </div>
-              <div>
-                <span class="text-muted-foreground">Command:</span>
-                <code class="ml-2 bg-muted px-2 py-1 rounded text-xs font-mono">
-                  {{ selectedPaneData?.command || "bash" }}
-                </code>
-              </div>
+            <XMarkIcon class="w-5 h-5" />
+          </button>
+        </div>
+
+        <div class="space-y-4">
+          <div class="flex gap-2">
+            <button
+              v-for="format in exportFormats"
+              :key="format.id"
+              @click="selectedExportFormat = format.id"
+              :class="[
+                'px-3 py-2 text-sm rounded-md transition-colors',
+                selectedExportFormat === format.id
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+              ]"
+            >
+              {{ format.name }}
+            </button>
+          </div>
+
+          <div class="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Generated Script</span>
+              <button
+                @click="copyToClipboard(generatedScript)"
+                class="flex items-center gap-1 px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+              >
+                <DocumentDuplicateIcon class="w-3 h-3" />
+                Copy
+              </button>
             </div>
+            <pre class="text-xs font-mono text-gray-800 dark:text-gray-200 whitespace-pre-wrap overflow-x-auto">{{ generatedScript }}</pre>
           </div>
         </div>
       </div>
@@ -346,586 +462,379 @@
   </div>
 </template>
 
-<script setup>
-import { ref, computed, onMounted, nextTick } from "vue";
-
-// Inline SVG Icon Components
-const PlusIcon = {
-  template: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>`,
-};
-
-const DownloadIcon = {
-  template: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>`,
-};
-
-const TerminalIcon = {
-  template: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4,17 10,11 4,5"/><line x1="12" x2="20" y1="19" y2="19"/></svg>`,
-};
-
-const XIcon = {
-  template: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>`,
-};
-
-const SplitHorizontalIcon = {
-  template: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 19H5c-1 0-2-1-2-2V7c0-1 1-2 2-2h3"/><path d="M16 5h3c1 0 2 1 2 2v10c0 1-1 2-2 2h-3"/><line x1="12" x2="12" y1="4" y2="20"/></svg>`,
-};
-
-const SplitVerticalIcon = {
-  template: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8V5c0-1 1-2 2-2h10c1 0 2 1 2 2v3"/><path d="M19 16v3c0 1-1 2-2 2H7c-1 0-2-1-2-2v-3"/><line x1="4" x2="20" y1="12" y2="12"/></svg>`,
-};
-
-const SettingsIcon = {
-  template: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>`,
-};
-
-const BookOpenIcon = {
-  template: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>`,
-};
-
-const AlertCircleIcon = {
-  template: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>`,
-};
-
-const GripVerticalIcon = {
-  template: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg>`,
-};
-
-const CopyIcon = {
-  template: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>`,
-};
-
-const FileTextIcon = {
-  template: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>`,
-};
-
-const CheckCircleIcon = {
-  template: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>`,
-};
-
-const CodeIcon = {
-  template: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16,18 22,12 16,6"/><polyline points="8,6 2,12 8,18"/></svg>`,
-};
-
-const ServerIcon = {
-  template: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="8" x="2" y="2" rx="2" ry="2"/><rect width="20" height="8" x="2" y="14" rx="2" ry="2"/><line x1="6" x2="6.01" y1="6" y2="6"/><line x1="6" x2="6.01" y1="18" y2="18"/></svg>`,
-};
-
-const DatabaseIcon = {
-  template: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 3 4 6 9 6s9-3 9-6V5"/><path d="M3 12c0 3 4 6 9 6s9-3 9-6"/></svg>`,
-};
-
-const GlobeIcon = {
-  template: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>`,
-};
-
-const FolderIcon = {
-  template: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>`,
-};
-
-const MoonIcon = {
-  template: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>`,
-};
-
-const SunIcon = {
-  template: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>`,
-};
-
-// Reactive state
-const theme = ref("light");
-const showExportDialog = ref(false);
-const activeExportTab = ref("script");
-const copied = ref(false);
-const selectedPane = ref(null);
-const searchTerm = ref("");
-const selectedCategory = ref("");
-const draggedTemplate = ref(null);
-const draggedPane = ref(null);
-
-// Pane management
-const panes = ref([{ id: "1", command: "bash", size: 1, children: [] }]);
-const rootDirection = ref("row");
-
-// Command templates
-const commandTemplates = ref([
-  {
-    id: "npm-start",
-    name: "npm start",
-    command: "npm start",
-    description: "Start development server",
-    category: "dev",
-    icon: CodeIcon,
-  },
-  {
-    id: "npm-build",
-    name: "npm build",
-    command: "npm run build",
-    description: "Build for production",
-    category: "dev",
-    icon: CodeIcon,
-  },
-  {
-    id: "git-status",
-    name: "git status",
-    command: "git status",
-    description: "Check git status",
-    category: "dev",
-    icon: CodeIcon,
-  },
-  {
-    id: "docker-logs",
-    name: "docker logs",
-    command: "docker-compose logs -f",
-    description: "Follow docker logs",
-    category: "server",
-    icon: ServerIcon,
-  },
-  {
-    id: "tail-logs",
-    name: "tail logs",
-    command: "tail -f /var/log/app.log",
-    description: "Follow application logs",
-    category: "server",
-    icon: ServerIcon,
-  },
-  {
-    id: "mysql-cli",
-    name: "mysql",
-    command: "mysql -u root -p",
-    description: "MySQL command line",
-    category: "database",
-    icon: DatabaseIcon,
-  },
-  {
-    id: "redis-cli",
-    name: "redis-cli",
-    command: "redis-cli",
-    description: "Redis command line",
-    category: "database",
-    icon: DatabaseIcon,
-  },
-  {
-    id: "curl-test",
-    name: "curl test",
-    command: "curl -X GET http://localhost:3000/api/health",
-    description: "Test API endpoint",
-    category: "web",
-    icon: GlobeIcon,
-  },
-  {
-    id: "htop",
-    name: "htop",
-    command: "htop",
-    description: "System monitor",
-    category: "system",
-    icon: TerminalIcon,
-  },
-  {
-    id: "cd-project",
-    name: "cd project",
-    command: "cd ~/projects/my-app",
-    description: "Navigate to project",
-    category: "system",
-    icon: FolderIcon,
-  },
-]);
-
-// Export tabs
-const exportTabs = ref([
-  { value: "script", label: "Bash Script", icon: TerminalIcon },
-  { value: "commands", label: "Commands", icon: TerminalIcon },
-  { value: "config", label: "Config", icon: FileTextIcon },
-]);
-
-// Computed properties
-const categories = computed(() => {
-  return [...new Set(commandTemplates.value.map((t) => t.category))];
-});
-
-const filteredTemplates = computed(() => {
-  return commandTemplates.value.filter((template) => {
-    const matchesSearch =
-      template.name.toLowerCase().includes(searchTerm.value.toLowerCase()) ||
-      template.command.toLowerCase().includes(searchTerm.value.toLowerCase()) ||
-      template.description
-        .toLowerCase()
-        .includes(searchTerm.value.toLowerCase());
-    const matchesCategory =
-      !selectedCategory.value || template.category === selectedCategory.value;
-    return matchesSearch && matchesCategory;
-  });
-});
-
-const rootPanes = computed(() => {
-  return panes.value.filter((pane) => !pane.parent);
-});
-
-const selectedPaneData = computed(() => {
-  return findPaneById(selectedPane.value);
-});
-
-const bashScript = computed(() => {
-  const sessionName = "tmux-session";
-  let script = `#!/bin/bash\n\n# Tmux Layout Script\n# Generated by Tmux Layout Builder\n\n`;
-  script += `tmux new-session -d -s ${sessionName}\n\n`;
-
-  panes.value.forEach((pane, index) => {
-    if (index === 0) {
-      script += `tmux send-keys -t ${sessionName}:0.0 '${pane.command}' Enter\n`;
-    } else {
-      script += `tmux split-window -t ${sessionName}\n`;
-      script += `tmux send-keys -t ${sessionName}:0.${index} '${pane.command}' Enter\n`;
+<script>
+export default {
+  name: 'TmuxLayoutBuilder',
+  data() {
+    return {
+      windows: [
+        {
+          id: '1',
+          name: 'main',
+          panes: [{ id: '1', command: '', name: 'pane-1' }],
+          layout: 'horizontal'
+        }
+      ],
+      activeWindow: '1',
+      sessionName: 'my-session',
+      mouseEnabled: false,
+      selectedPane: null,
+      templateCategory: 'all',
+      showTemplates: false,
+      draggedPane: null,
+      dragOverPane: null,
+      showExportDialog: false,
+      selectedExportFormat: 'bash',
+      isDark: false,
+      commandTemplates: [
+        { name: 'Node.js Development Server', command: 'cd ~/project && npm run dev', category: 'development' },
+        { name: 'Python Flask Server', command: 'cd ~/project && python app.py', category: 'development' },
+        { name: 'React Development', command: 'cd ~/project && npm start', category: 'development' },
+        { name: 'Vue.js Development', command: 'cd ~/project && npm run serve', category: 'development' },
+        { name: 'System Monitor', command: 'htop', category: 'system' },
+        { name: 'File Manager', command: 'ranger', category: 'system' },
+        { name: 'Git Status Watch', command: 'watch -n 2 git status', category: 'development' },
+        { name: 'MySQL Client', command: 'mysql -u root -p', category: 'database' },
+        { name: 'PostgreSQL Client', command: 'psql -U postgres', category: 'database' },
+        { name: 'Redis CLI', command: 'redis-cli', category: 'database' },
+        { name: 'Nginx Access Logs', command: 'tail -f /var/log/nginx/access.log', category: 'web' },
+        { name: 'Apache Error Logs', command: 'tail -f /var/log/apache2/error.log', category: 'web' }
+      ],
+      exportFormats: [
+        { id: 'bash', name: 'Bash Script' },
+        { id: 'commands', name: 'Manual Commands' },
+        { id: 'json', name: 'JSON Config' }
+      ]
     }
-  });
-
-  script += `\ntmux select-layout -t ${sessionName} tiled\n`;
-  script += `tmux attach-session -t ${sessionName}\n`;
-
-  return script;
-});
-
-const manualCommands = computed(() => {
-  const sessionName = "tmux-session";
-  let commands = `# Manual Tmux Commands\n# Generated by Tmux Layout Builder\n\n`;
-  commands += `tmux new-session -d -s ${sessionName}\n`;
-
-  panes.value.forEach((pane, index) => {
-    if (index === 0) {
-      commands += `tmux send-keys -t ${sessionName}:0.0 '${pane.command}' Enter\n`;
-    } else {
-      commands += `tmux split-window -t ${sessionName}\n`;
-      commands += `tmux send-keys -t ${sessionName}:0.${index} '${pane.command}' Enter\n`;
-    }
-  });
-
-  commands += `tmux select-layout -t ${sessionName} tiled\n`;
-  commands += `tmux attach-session -t ${sessionName}\n`;
-
-  return commands;
-});
-
-const jsonConfig = computed(() => {
-  return JSON.stringify(
-    {
-      session: "tmux-session",
-      layout: rootDirection.value,
-      panes: panes.value.map((pane) => ({
-        id: pane.id,
-        command: pane.command,
-        size: pane.size,
-      })),
+  },
+  computed: {
+    currentWindow() {
+      return this.windows.find(w => w.id === this.activeWindow)
     },
-    null,
-    2
-  );
-});
-
-// Pane Component
-const PaneComponent = {
-  props: ["pane", "selectedPane", "commandTemplates"],
-  emits: ["select", "split", "updateCommand", "dragStart", "dragOver", "drop"],
-  template: `
-    <div
-      :class="[
-        'border-2 rounded-md p-3 min-h-[100px] transition-all cursor-pointer relative',
-        selectedPane === pane.id
-          ? 'border-primary bg-primary/5'
-          : 'border-border hover:border-primary/50 bg-card'
-      ]"
-      @click="$emit('select', pane.id)"
-      @dragover.prevent="$emit('dragOver', $event, pane.id)"
-      @drop.prevent="$emit('drop', $event, pane.id)"
-    >
-      <div class="flex items-center justify-between mb-2">
-        <div class="flex items-center gap-2">
-          <GripVerticalIcon class="w-3 h-3 text-muted-foreground cursor-grab active:cursor-grabbing" />
-          <span class="text-sm font-medium">Pane {{ pane.id }}</span>
-        </div>
-        <div class="flex gap-1">
-          <button
-            @click.stop="$emit('split', pane.id, 'horizontal')"
-            class="p-1 hover:bg-accent rounded text-xs"
-            title="Split Horizontal"
-          >
-            <SplitHorizontalIcon class="w-3 h-3" />
-          </button>
-          <button
-            @click.stop="$emit('split', pane.id, 'vertical')"
-            class="p-1 hover:bg-accent rounded text-xs"
-            title="Split Vertical"
-          >
-            <SplitVerticalIcon class="w-3 h-3" />
-          </button>
-        </div>
-      </div>
-      
-      <div class="space-y-2">
-        <div>
-          <label class="text-xs text-muted-foreground">Command:</label>
-          <input
-            :value="pane.command"
-            @input="$emit('updateCommand', pane.id, $event.target.value)"
-            @click.stop
-            type="text"
-            class="w-full mt-1 px-2 py-1 text-sm border border-border rounded bg-background focus:outline-none focus:ring-1 focus:ring-primary"
-            placeholder="Enter command..."
-          >
-        </div>
-      </div>
-      
-      <div v-if="pane.children && pane.children.length > 0" class="mt-3 space-y-2">
-        <PaneComponent
-          v-for="child in pane.children"
-          :key="child.id"
-          :pane="child"
-          :selected-pane="selectedPane"
-          :command-templates="commandTemplates"
-          @select="$emit('select', $arguments[0])"
-          @split="$emit('split', $arguments[0], $arguments[1])"
-          @update-command="$emit('updateCommand', $arguments[0], $arguments[1])"
-          @drag-start="$emit('dragStart', $arguments[0])"
-          @drag-over="$emit('dragOver', $arguments[0], $arguments[1])"
-          @drop="$emit('drop', $arguments[0], $arguments[1])"
-        />
-      </div>
-    </div>
-  `,
-  components: {
-    GripVerticalIcon,
-    SplitHorizontalIcon,
-    SplitVerticalIcon,
+    rootPanes() {
+      return this.currentWindow?.panes?.filter(p => !p.parentId) || []
+    },
+    childPanes() {
+      return this.currentWindow?.panes?.filter(p => p.parentId) || []
+    },
+    filteredTemplates() {
+      if (this.templateCategory === 'all') {
+        return this.commandTemplates
+      }
+      return this.commandTemplates.filter(t => t.category === this.templateCategory)
+    },
+    generatedScript() {
+      if (this.selectedExportFormat === 'bash') {
+        return this.generateBashScript()
+      } else if (this.selectedExportFormat === 'commands') {
+        return this.generateManualCommands()
+      } else {
+        return this.generateJsonConfig()
+      }
+    },
+    // Font Awesome Icons as inline SVG components
+    PlusIcon() {
+      return {
+        template: '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"></path></svg>'
+      }
+    },
+    ArrowDownTrayIcon() {
+      return {
+        template: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>'
+      }
+    },
+    TerminalIcon() {
+      return {
+        template: '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>'
+      }
+    },
+    XMarkIcon() {
+      return {
+        template: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>'
+      }
+    },
+    ArrowsRightLeftIcon() {
+      return {
+        template: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16l-4-4m0 0l4-4m-4 4h18m-4-4l4 4m0 0l-4 4"></path></svg>'
+      }
+    },
+    ArrowsUpDownIcon() {
+      return {
+        template: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path></svg>'
+      }
+    },
+    CogIcon() {
+      return {
+        template: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>'
+      }
+    },
+    BookOpenIcon() {
+      return {
+        template: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>'
+      }
+    },
+    ExclamationTriangleIcon() {
+      return {
+        template: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"></path></svg>'
+      }
+    },
+    GripVerticalIcon() {
+      return {
+        template: '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"></path></svg>'
+      }
+    },
+    DocumentDuplicateIcon() {
+      return {
+        template: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>'
+      }
+    },
+    MoonIcon() {
+      return {
+        template: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>'
+      }
+    },
+    SunIcon() {
+      return {
+        template: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>'
+      }
+    }
   },
-};
+  mounted() {
+    // Initialize theme
+    this.isDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+    this.updateTheme()
+  },
+  methods: {
+    splitPane(paneId, direction) {
+      if (!this.currentWindow) return
 
-// Methods
-const toggleTheme = () => {
-  theme.value = theme.value === "light" ? "dark" : "light";
-  document.documentElement.classList.toggle("dark", theme.value === "dark");
-};
+      const newPane = {
+        id: Date.now().toString(),
+        command: '',
+        name: `pane-${this.currentWindow.panes.length + 1}`,
+        parentId: paneId,
+        splitDirection: direction
+      }
 
-const addPane = () => {
-  const newId = String(panes.value.length + 1);
-  panes.value.push({
-    id: newId,
-    command: "bash",
-    size: 1,
-    children: [],
-  });
-};
+      this.windows = this.windows.map(w => 
+        w.id === this.activeWindow 
+          ? { ...w, panes: [...w.panes, newPane] }
+          : w
+      )
+    },
+    addPane() {
+      if (!this.currentWindow) return
 
-const selectPane = (paneId) => {
-  selectedPane.value = paneId;
-};
+      const newPane = {
+        id: Date.now().toString(),
+        command: '',
+        name: `pane-${this.currentWindow.panes.length + 1}`
+      }
 
-const splitPane = (paneId, direction) => {
-  const pane = findPaneById(paneId);
-  if (!pane) return;
+      this.windows = this.windows.map(w => 
+        w.id === this.activeWindow 
+          ? { ...w, panes: [...w.panes, newPane] }
+          : w
+      )
+    },
+    removePane(paneId) {
+      if (!this.currentWindow || this.currentWindow.panes.length <= 1) return
 
-  const newId = String(panes.value.length + 1);
-  const newPane = {
-    id: newId,
-    command: "bash",
-    size: 0.5,
-    children: [],
-  };
+      this.windows = this.windows.map(w => 
+        w.id === this.activeWindow 
+          ? { ...w, panes: w.panes.filter(p => p.id !== paneId) }
+          : w
+      )
 
-  pane.size = 0.5;
+      if (this.selectedPane === paneId) {
+        this.selectedPane = null
+      }
+    },
+    updatePane(paneId, updates) {
+      this.windows = this.windows.map(w => 
+        w.id === this.activeWindow 
+          ? {
+              ...w,
+              panes: w.panes.map(p => p.id === paneId ? { ...p, ...updates } : p)
+            }
+          : w
+      )
+    },
+    changeLayout(layout) {
+      this.windows = this.windows.map(w => 
+        w.id === this.activeWindow ? { ...w, layout } : w
+      )
+    },
+    setSelectedPane(paneId) {
+      this.selectedPane = paneId
+    },
+    handleDragStart(e, paneId) {
+      this.draggedPane = paneId
+      e.dataTransfer.effectAllowed = 'move'
+    },
+    handleDragOver(e, paneId) {
+      e.preventDefault()
+      e.dataTransfer.dropEffect = 'move'
+      this.dragOverPane = paneId
+    },
+    handleDragLeave() {
+      this.dragOverPane = null
+    },
+    handleDrop(e, targetPaneId) {
+      e.preventDefault()
 
-  if (!pane.children) pane.children = [];
-  pane.children.push(newPane);
-  pane.direction = direction;
+      if (!this.draggedPane || !this.currentWindow || this.draggedPane === targetPaneId) {
+        this.draggedPane = null
+        this.dragOverPane = null
+        return
+      }
 
-  panes.value.push(newPane);
-};
+      const newPanes = [...this.currentWindow.panes]
+      const draggedIndex = newPanes.findIndex(p => p.id === this.draggedPane)
+      const targetIndex = newPanes.findIndex(p => p.id === targetPaneId)
 
-const updatePaneCommand = (paneId, command) => {
-  const pane = findPaneById(paneId);
-  if (pane) {
-    pane.command = command;
+      const [removed] = newPanes.splice(draggedIndex, 1)
+      newPanes.splice(targetIndex, 0, removed)
+
+      this.windows = this.windows.map(w => 
+        w.id === this.activeWindow ? { ...w, panes: newPanes } : w
+      )
+
+      this.draggedPane = null
+      this.dragOverPane = null
+    },
+    validateCommand(command) {
+      if (!command.trim()) {
+        return { isValid: true }
+      }
+
+      if (command.includes('&&') && command.split('&&').some(part => !part.trim())) {
+        return { isValid: false, message: 'Empty command after &&' }
+      }
+
+      if (command.includes('sudo') && !command.includes('-S')) {
+        return { isValid: false, message: "Consider using 'sudo -S' for non-interactive sudo" }
+      }
+
+      return { isValid: true }
+    },
+    applyTemplate(command) {
+      if (this.selectedPane) {
+        this.updatePane(this.selectedPane, { command })
+        this.showTemplates = false
+      }
+    },
+    generateBashScript() {
+      let script = '#!/bin/bash\n\n'
+      script += `# tmux session: ${this.sessionName}\n\n`
+      
+      if (this.mouseEnabled) {
+        script += 'tmux set -g mouse on\n'
+      }
+      
+      script += `tmux new-session -d -s "${this.sessionName}"\n\n`
+      
+      if (this.currentWindow && this.currentWindow.panes.length > 0) {
+        const firstPane = this.currentWindow.panes[0]
+        if (firstPane.command) {
+          script += `tmux send-keys -t "${this.sessionName}:0.0" "${firstPane.command}" Enter\n`
+        }
+        
+        for (let i = 1; i < this.currentWindow.panes.length; i++) {
+          const pane = this.currentWindow.panes[i]
+          const splitDirection = pane.splitDirection === 'vertical' ? '-v' : '-h'
+          script += `tmux split-window ${splitDirection} -t "${this.sessionName}:0"\n`
+          if (pane.command) {
+            script += `tmux send-keys -t "${this.sessionName}:0.${i}" "${pane.command}" Enter\n`
+          }
+        }
+      }
+      
+      script += `\ntmux attach-session -t "${this.sessionName}"\n`
+      return script
+    },
+    generateManualCommands() {
+      let commands = `# Manual tmux commands for session: ${this.sessionName}\n\n`
+      
+      if (this.mouseEnabled) {
+        commands += 'tmux set -g mouse on\n'
+      }
+      
+      commands += `tmux new-session -d -s "${this.sessionName}"\n`
+      
+      if (this.currentWindow && this.currentWindow.panes.length > 0) {
+        const firstPane = this.currentWindow.panes[0]
+        if (firstPane.command) {
+          commands += `tmux send-keys -t "${this.sessionName}:0.0" "${firstPane.command}" Enter\n`
+        }
+        
+        for (let i = 1; i < this.currentWindow.panes.length; i++) {
+          const pane = this.currentWindow.panes[i]
+          const splitDirection = pane.splitDirection === 'vertical' ? '-v' : '-h'
+          commands += `tmux split-window ${splitDirection} -t "${this.sessionName}:0"\n`
+          if (pane.command) {
+            commands += `tmux send-keys -t "${this.sessionName}:0.${i}" "${pane.command}" Enter\n`
+          }
+        }
+      }
+      
+      commands += `tmux attach-session -t "${this.sessionName}"\n`
+      return commands
+    },
+    generateJsonConfig() {
+      return JSON.stringify({
+        sessionName: this.sessionName,
+        mouseEnabled: this.mouseEnabled,
+        windows: this.windows
+      }, null, 2)
+    },
+    async copyToClipboard(text) {
+      try {
+        await navigator.clipboard.writeText(text)
+        // You could add a toast notification here
+      } catch (err) {
+        console.error('Failed to copy text: ', err)
+      }
+    },
+    toggleTheme() {
+      this.isDark = !this.isDark
+      this.updateTheme()
+    },
+    updateTheme() {
+      if (this.isDark) {
+        document.documentElement.classList.add('dark')
+      } else {
+        document.documentElement.classList.remove('dark')
+      }
+    }
   }
-};
-
-const resetLayout = () => {
-  panes.value = [{ id: "1", command: "bash", size: 1, children: [] }];
-  selectedPane.value = null;
-};
-
-const findPaneById = (id) => {
-  return panes.value.find((pane) => pane.id === id);
-};
-
-const applyTemplate = (template) => {
-  if (selectedPane.value) {
-    updatePaneCommand(selectedPane.value, template.command);
-  }
-};
-
-const handleTemplateDragStart = (event, template) => {
-  draggedTemplate.value = template;
-  event.dataTransfer.setData("text/plain", template.id);
-};
-
-const handleDragStart = (paneId) => {
-  draggedPane.value = paneId;
-};
-
-const handleDragOver = (event, paneId) => {
-  event.preventDefault();
-};
-
-const handleDrop = (event, paneId) => {
-  event.preventDefault();
-
-  if (draggedTemplate.value) {
-    updatePaneCommand(paneId, draggedTemplate.value.command);
-    draggedTemplate.value = null;
-  }
-};
-
-const copyToClipboard = async (text) => {
-  try {
-    await navigator.clipboard.writeText(text);
-    copied.value = true;
-    setTimeout(() => {
-      copied.value = false;
-    }, 2000);
-  } catch (err) {
-    console.error("Failed to copy text: ", err);
-  }
-};
-
-const downloadFile = (content, filename) => {
-  const blob = new Blob([content], { type: "text/plain" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-};
-
-// Lifecycle
-onMounted(() => {
-  // Initialize theme
-  const savedTheme = localStorage.getItem("theme") || "light";
-  theme.value = savedTheme;
-  document.documentElement.classList.toggle("dark", savedTheme === "dark");
-
-  // Select first pane by default
-  if (panes.value.length > 0) {
-    selectedPane.value = panes.value[0].id;
-  }
-});
+}
 </script>
 
 <style scoped>
-/* Custom styles for the tmux layout builder */
-.container {
-  max-width: 1400px;
+/* Custom scrollbar styles */
+::-webkit-scrollbar {
+  width: 6px;
 }
 
-/* Dark mode styles */
-:global(.dark) {
-  --background: 222.2% 84% 4.9%;
-  --foreground: 210% 40% 98%;
-  --card: 222.2% 84% 4.9%;
-  --card-foreground: 210% 40% 98%;
-  --popover: 222.2% 84% 4.9%;
-  --popover-foreground: 210% 40% 98%;
-  --primary: 210% 40% 98%;
-  --primary-foreground: 222.2% 84% 4.9%;
-  --secondary: 217.2% 32.6% 17.5%;
-  --secondary-foreground: 210% 40% 98%;
-  --muted: 217.2% 32.6% 17.5%;
-  --muted-foreground: 215% 20.2% 65.1%;
-  --accent: 217.2% 32.6% 17.5%;
-  --accent-foreground: 210% 40% 98%;
-  --destructive: 0% 62.8% 30.6%;
-  --destructive-foreground: 210% 40% 98%;
-  --border: 217.2% 32.6% 17.5%;
-  --input: 217.2% 32.6% 17.5%;
-  --ring: 212.7% 26.8% 83.9%;
+::-webkit-scrollbar-track {
+  background: transparent;
 }
 
-/* Light mode styles */
-:global(.light) {
-  --background: 0% 0% 100%;
-  --foreground: 222.2% 84% 4.9%;
-  --card: 0% 0% 100%;
-  --card-foreground: 222.2% 84% 4.9%;
-  --popover: 0% 0% 100%;
-  --popover-foreground: 222.2% 84% 4.9%;
-  --primary: 222.2% 47.4% 11.2%;
-  --primary-foreground: 210% 40% 98%;
-  --secondary: 210% 40% 96%;
-  --secondary-foreground: 222.2% 47.4% 11.2%;
-  --muted: 210% 40% 96%;
-  --muted-foreground: 215.4% 16.3% 46.9%;
-  --accent: 210% 40% 96%;
-  --accent-foreground: 222.2% 47.4% 11.2%;
-  --destructive: 0% 84.2% 60.2%;
-  --destructive-foreground: 210% 40% 98%;
-  --border: 214.3% 31.8% 91.4%;
-  --input: 214.3% 31.8% 91.4%;
-  --ring: 222.2% 84% 4.9%;
+::-webkit-scrollbar-thumb {
+  background: #cbd5e0;
+  border-radius: 3px;
 }
 
-/* Apply CSS custom properties */
-.bg-background {
-  background-color: hsl(var(--background));
-}
-.text-foreground {
-  color: hsl(var(--foreground));
-}
-.bg-card {
-  background-color: hsl(var(--card));
-}
-.text-card-foreground {
-  color: hsl(var(--card-foreground));
-}
-.bg-primary {
-  background-color: hsl(var(--primary));
-}
-.text-primary-foreground {
-  color: hsl(var(--primary-foreground));
-}
-.bg-secondary {
-  background-color: hsl(var(--secondary));
-}
-.text-secondary-foreground {
-  color: hsl(var(--secondary-foreground));
-}
-.bg-muted {
-  background-color: hsl(var(--muted));
-}
-.text-muted-foreground {
-  color: hsl(var(--muted-foreground));
-}
-.bg-accent {
-  background-color: hsl(var(--accent));
-}
-.text-accent-foreground {
-  color: hsl(var(--accent-foreground));
-}
-.border-border {
-  border-color: hsl(var(--border));
-}
-.border-primary {
-  border-color: hsl(var(--primary));
+.dark ::-webkit-scrollbar-thumb {
+  background: #4a5568;
 }
 
-/* Utility classes */
-.transition-colors {
-  transition: color 0.2s, background-color 0.2s, border-color 0.2s;
+::-webkit-scrollbar-thumb:hover {
+  background: #a0aec0;
 }
-.transition-all {
-  transition: all 0.2s;
-}
-.cursor-grab {
-  cursor: grab;
-}
-.cursor-grabbing {
-  cursor: grabbing;
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #2d3748;
 }
 </style>

@@ -9,5 +9,11 @@ export default {
   name: "App",
 
   components: { TmuxLayoutBuilder },
+
+  created() {
+    const title = '-'
+
+    document.title = title
+  }
 };
 </script>

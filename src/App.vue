@@ -1,55 +1,155 @@
 <template>
   <div class="flex h-screen bg-gray-50 dark:bg-gray-900 text-black dark:text-white">
-    <the-sidebar @update:configuration="config = $event" />
-    <the-preview :configuration="config" />
-    <the-generator :configuration="config" />
+    <TmuxSidebar
+      :session-name="sessionName"
+      :mouse-enabled="mouseEnabled"
+      :current-layout="currentWindow?.layout"
+      :panes="currentWindow?.panes || []"
+      :selected-pane="selectedPane"
+      @update:session-name="sessionName = $event"
+      @update:mouse-enabled="mouseEnabled = $event"
+      @change-layout="changeLayout"
+      @add-pane="addPane"
+      @remove-pane="removePane"
+      @update-pane="updatePane"
+      @select-pane="setSelectedPane"
+      @split-pane="splitPane"
+      @reorder-panes="reorderPanes"
+    />
+
+    <TmuxPreview
+      :window-name="currentWindow?.name"
+      :layout="currentWindow?.layout"
+      :panes="currentWindow?.panes || []"
+      :selected-pane="selectedPane"
+      :selected-pane-name="selectedPaneName"
+      @select-pane="setSelectedPane"
+      @split-pane="splitPane"
+      @show-export="showExportDialog = true"
+      @reorder-panes="reorderPanes"
+    />
+
+    <ExportDialog
+      :show="showExportDialog"
+      :session-name="sessionName"
+      :mouse-enabled="mouseEnabled"
+      :panes="currentWindow?.panes || []"
+      @close="showExportDialog = false"
+    />
   </div>
 </template>
 
 <script>
-import TheSidebar from './components/Sidebar.vue'
-import ThePreview from './components/Preview.vue'
-import TheGenerator from './components/Generator.vue'
+import TmuxSidebar from './components/tmux-sidebar.vue'
+import TmuxPreview from './components/tmux-preview.vue'
+import ExportDialog from './components/export-dialog.vue'
 
 export default {
-  name: 'App',
-
-  components: { TheSidebar, ThePreview, TheGenerator },
-
-  data() {
-    return { config: {} }
+  name: 'TmuxLayoutBuilder',
+  components: {
+    TmuxSidebar,
+    TmuxPreview,
+    ExportDialog
   },
+  data() {
+    return {
+      windows: [
+        {
+          id: '1',
+          name: 'main',
+          panes: [{ id: '1', command: '', name: 'pane-1' }],
+          layout: 'horizontal'
+        }
+      ],
+      activeWindow: '1',
+      sessionName: 'my-session',
+      mouseEnabled: false,
+      selectedPane: null,
+      showExportDialog: false
+    }
+  },
+  computed: {
+    currentWindow() {
+      return this.windows.find((w) => w.id === this.activeWindow)
+    },
+    selectedPaneName() {
+      if (!this.selectedPane || !this.currentWindow) return ''
+      const pane = this.currentWindow.panes.find((p) => p.id === this.selectedPane)
+      return pane ? pane.name : ''
+    }
+  },
+  methods: {
+    splitPane(paneId, direction) {
+      if (!this.currentWindow) return
 
-  created() {
-    document.title = 'Tmux Layout Builder'
+      const newPane = {
+        id: Date.now().toString(),
+        command: '',
+        name: `pane-${this.currentWindow.panes.length + 1}`,
+        parentId: paneId,
+        splitDirection: direction
+      }
+
+      this.windows = this.windows.map((w) =>
+        w.id === this.activeWindow ? { ...w, panes: [...w.panes, newPane] } : w
+      )
+    },
+    addPane() {
+      if (!this.currentWindow) return
+
+      const newPane = {
+        id: Date.now().toString(),
+        command: '',
+        name: `pane-${this.currentWindow.panes.length + 1}`
+      }
+
+      this.windows = this.windows.map((w) =>
+        w.id === this.activeWindow ? { ...w, panes: [...w.panes, newPane] } : w
+      )
+    },
+    removePane(paneId) {
+      if (!this.currentWindow || this.currentWindow.panes.length <= 1) return
+
+      this.windows = this.windows.map((w) =>
+        w.id === this.activeWindow ? { ...w, panes: w.panes.filter((p) => p.id !== paneId) } : w
+      )
+
+      if (this.selectedPane === paneId) {
+        this.selectedPane = null
+      }
+    },
+    updatePane(paneId, updates) {
+      this.windows = this.windows.map((w) =>
+        w.id === this.activeWindow
+          ? {
+              ...w,
+              panes: w.panes.map((p) => (p.id === paneId ? { ...p, ...updates } : p))
+            }
+          : w
+      )
+    },
+    changeLayout(layout) {
+      this.windows = this.windows.map((w) => (w.id === this.activeWindow ? { ...w, layout } : w))
+    },
+    setSelectedPane(paneId) {
+      this.selectedPane = paneId
+    },
+    reorderPanes(draggedPaneId, targetPaneId) {
+      if (!draggedPaneId || !this.currentWindow || draggedPaneId === targetPaneId) {
+        return
+      }
+
+      const newPanes = [...this.currentWindow.panes]
+      const draggedIndex = newPanes.findIndex((p) => p.id === draggedPaneId)
+      const targetIndex = newPanes.findIndex((p) => p.id === targetPaneId)
+
+      const [removed] = newPanes.splice(draggedIndex, 1)
+      newPanes.splice(targetIndex, 0, removed)
+
+      this.windows = this.windows.map((w) =>
+        w.id === this.activeWindow ? { ...w, panes: newPanes } : w
+      )
+    }
   }
 }
 </script>
-
-<style scoped>
-/* Custom scrollbar styles */
-::-webkit-scrollbar {
-  width: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #cbd5e0;
-  border-radius: 3px;
-}
-
-.dark ::-webkit-scrollbar-thumb {
-  background: #4a5568;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #a0aec0;
-}
-
-.dark ::-webkit-scrollbar-thumb:hover {
-  background: #2d3748;
-}
-</style>

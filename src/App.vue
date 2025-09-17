@@ -1,19 +1,29 @@
 <template>
-  <main-dashboard />
+  <div class="flex h-screen bg-gray-50 dark:bg-gray-900 text-black dark:text-white">
+    <the-sidebar @update:configuration="config = $event" />
+    <the-preview :configuration="config" />
+    <the-generator :configuration="config" />
+  </div>
 </template>
 
 <script>
-import MainDashboard from "./components/Dashboard.vue";
+import TheSidebar from './components/Sidebar.vue'
+import ThePreview from './components/Preview.vue'
+import TheGenerator from './components/Generator.vue'
 
 export default {
-  name: "App",
+  name: 'App',
 
-  components: { MainDashboard },
+  components: { TheSidebar, ThePreview, TheGenerator },
+
+  data() {
+    return { config: {} }
+  },
 
   created() {
     document.title = 'Tmux Layout Builder'
   }
-};
+}
 </script>
 
 <style scoped>

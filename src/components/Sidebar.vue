@@ -167,7 +167,7 @@
 import InputWrapper from './InputWrapper.vue'
 
 export default {
-  name: 'TmuxSidebar',
+  name: 'TheSidebar',
 
   components: { InputWrapper },
 

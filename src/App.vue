@@ -1,6 +1,6 @@
 <template>
   <div class="flex h-screen bg-gray-50 dark:bg-gray-900 text-black dark:text-white">
-    <TmuxSidebar
+    <the-sidebar
       :session-name="sessionName"
       :mouse-enabled="mouseEnabled"
       :current-layout="currentWindow?.layout"
@@ -16,8 +16,7 @@
       @split-pane="splitPane"
       @reorder-panes="reorderPanes"
     />
-
-    <TmuxPreview
+    <the-preview
       :window-name="currentWindow?.name"
       :layout="currentWindow?.layout"
       :panes="currentWindow?.panes || []"
@@ -28,8 +27,7 @@
       @show-export="showExportDialog = true"
       @reorder-panes="reorderPanes"
     />
-
-    <ExportDialog
+    <export-dialog
       :show="showExportDialog"
       :session-name="sessionName"
       :mouse-enabled="mouseEnabled"
@@ -40,17 +38,15 @@
 </template>
 
 <script>
-import TmuxSidebar from './components/tmux-sidebar.vue'
-import TmuxPreview from './components/tmux-preview.vue'
-import ExportDialog from './components/export-dialog.vue'
+import TheSidebar from './components/Sidebar.vue'
+import ThePreview from './components/Preview.vue'
+import ExportDialog from './components/ExportDialog.vue'
 
 export default {
   name: 'TmuxLayoutBuilder',
-  components: {
-    TmuxSidebar,
-    TmuxPreview,
-    ExportDialog
-  },
+
+  components: { TheSidebar, ThePreview, ExportDialog },
+
   data() {
     return {
       windows: [
@@ -68,6 +64,7 @@ export default {
       showExportDialog: false
     }
   },
+
   computed: {
     currentWindow() {
       return this.windows.find((w) => w.id === this.activeWindow)
@@ -78,6 +75,7 @@ export default {
       return pane ? pane.name : ''
     }
   },
+
   methods: {
     splitPane(paneId, direction) {
       if (!this.currentWindow) return

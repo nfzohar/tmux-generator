@@ -61,7 +61,14 @@ export default {
       sessionName: 'my-session',
       mouseEnabled: false,
       selectedPane: null,
-      showExportDialog: false
+      showExportDialog: false,
+
+      configuration: {
+        panes: [],
+        orientation: 'horizontal',
+        mouseEnabled: false,
+        sessionName: ''
+      }
     }
   },
 

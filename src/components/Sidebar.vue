@@ -1,12 +1,12 @@
 <template>
   <div
-    class="w-80 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 p-6 overflow-y-auto"
+    class="w-85 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 p-6 overflow-y-hidden"
   >
     <div class="flex flex-col gap-5">
       <div>
         <h1 class="text-2xl font-bold text-gray-900 dark:text-white capitalize" v-text="title" />
         <p
-          class="text-sm text-gray-600 dark:text-gray-400"
+          class="text-xs text-gray-600 dark:text-gray-400"
           v-text="'Visually create TMUX layouts and export as scripts'"
         />
       </div>
@@ -58,6 +58,33 @@
         </div>
       </div>
 
+      <template v-if="selectedPane">
+        <hr class="border-gray-200 dark:border-gray-700 my-2" />
+
+        <div>
+          <span
+            class="text-sm font-medium text-blue-700 dark:text-blue-300"
+            v-text="'Selected Pane Actions'"
+          />
+
+          <div
+            class="grid gap-2 mt-2 grid-cols-1"
+            :class="`grid-rows-${visibleSelectedPaneActionsCount}`"
+          >
+            <template v-for="(action, a) in selectedPaneActions" :key="a">
+              <button
+                v-if="action.show"
+                class="flex-1 flex items-center justify-center gap-1 px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                @click="action.run"
+              >
+                <i :class="action.icon" />
+                <span class="capitalize" v-text="action.label" />
+              </button>
+            </template>
+          </div>
+        </div>
+      </template>
+
       <hr class="border-gray-200 dark:border-gray-700 my-2" />
 
       <div>
@@ -72,34 +99,7 @@
           </button>
         </div>
 
-        <div
-          v-if="selectedPane"
-          class="p-3 mb-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md"
-        >
-          <span
-            class="text-sm font-medium text-blue-700 dark:text-blue-300"
-            v-text="'Selected Pane Actions'"
-          />
-          <div class="flex gap-2">
-            <button
-              @click="$emit('split-pane', selectedPane, 'horizontal')"
-              class="flex-1 flex items-center justify-center gap-1 px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-            >
-              <i class="fa fa-arrows-left-right" />
-              <span class="capitalize" v-text="'Split Horizontal'" />
-            </button>
-
-            <button
-              @click="$emit('split-pane', selectedPane, 'vertical')"
-              class="flex-1 flex items-center justify-center gap-1 px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-            >
-              <i class="fa fa-arrows-up-down" />
-              <span class="capitalize" v-text="'Split Vetical'" />
-            </button>
-          </div>
-        </div>
-
-        <div class="flex flex-col gap-3 h-full overflow-y-scroll">
+        <div class="flex flex-col gap-3 overflow-scroll">
           <div
             v-for="(pane, index) in panes"
             :key="pane.id"
@@ -119,7 +119,7 @@
                 />
                 <span
                   :class="[
-                    'px-2 py-1 text-xs rounded-full',
+                    'px-2 py-1 text-xs rounded-md',
                     selectedPane === pane.id
                       ? 'bg-blue-600 text-white'
                       : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
@@ -129,11 +129,11 @@
               </div>
 
               <button
-                v-if="panes.length > 1"
+                v-if="canDeletePanes"
                 class="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
                 @click.stop="$emit('remove-pane', pane.id)"
               >
-                <i class="fa fa-times" />
+                <i class="fa fa-times bg-red-500/40 py-1 px-2 rounded-md" />
               </button>
             </div>
 
@@ -208,6 +208,34 @@ export default {
   computed: {
     title() {
       return document.title
+    },
+    canDeletePanes() {
+      return this.panes.length > 1 ?? false
+    },
+    selectedPaneActions() {
+      return [
+        {
+          show: true,
+          label: 'Split Horizontal',
+          icon: 'fa-solid fa-table-columns',
+          run: () => this.$emit('split-pane', this.selectedPane, 'horizontal')
+        },
+        {
+          show: true,
+          label: 'Split Vertical',
+          icon: 'fa-solid fa-table-columns -rotate-90',
+          run: () => this.$emit('split-pane', this.selectedPane, 'vertical')
+        },
+        {
+          show: this.canDeletePanes,
+          label: 'Remove selected pane',
+          icon: 'fa fa-trash',
+          run: () => this.$emit('remove-pane', this.selectedPane)
+        }
+      ]
+    },
+    visibleSelectedPaneActionsCount() {
+      return this.selectedPaneActions.filter((action) => action.show).length
     }
   },
 
@@ -215,7 +243,7 @@ export default {
     // Set delete function key
     window.addEventListener('keydown', (event) => {
       if (event.key === 'Delete') {
-        if (this.panes.length > 1) {
+        if (this.canDeletePanes) {
           this.$emit('remove-pane', this.selectedPane)
         }
       }

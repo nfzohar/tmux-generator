@@ -53,7 +53,7 @@
             ]"
             :key="orientation"
             v-text="orientation"
-            @click="$emit('change-layout', 'horizontal')"
+            @click="$emit('change-layout', orientation)"
           />
         </div>
       </div>

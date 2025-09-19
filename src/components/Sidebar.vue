@@ -201,45 +201,7 @@ export default {
       templateCategory: 'all',
       showTemplates: false,
       draggedPane: null,
-      dragOverPane: null,
-      commandTemplates: [
-        {
-          name: 'Node.js Development Server',
-          command: 'cd ~/project && npm run dev',
-          category: 'development'
-        },
-        {
-          name: 'Python Flask Server',
-          command: 'cd ~/project && python app.py',
-          category: 'development'
-        },
-        {
-          name: 'React Development',
-          command: 'cd ~/project && npm start',
-          category: 'development'
-        },
-        {
-          name: 'Vue.js Development',
-          command: 'cd ~/project && npm run serve',
-          category: 'development'
-        },
-        { name: 'System Monitor', command: 'htop', category: 'system' },
-        { name: 'File Manager', command: 'ranger', category: 'system' },
-        { name: 'Git Status Watch', command: 'watch -n 2 git status', category: 'development' },
-        { name: 'MySQL Client', command: 'mysql -u root -p', category: 'database' },
-        { name: 'PostgreSQL Client', command: 'psql -U postgres', category: 'database' },
-        { name: 'Redis CLI', command: 'redis-cli', category: 'database' },
-        {
-          name: 'Nginx Access Logs',
-          command: 'tail -f /var/log/nginx/access.log',
-          category: 'web'
-        },
-        {
-          name: 'Apache Error Logs',
-          command: 'tail -f /var/log/apache2/error.log',
-          category: 'web'
-        }
-      ]
+      dragOverPane: null
     }
   },
 

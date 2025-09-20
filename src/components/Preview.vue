@@ -11,13 +11,6 @@
             class="text-xl font-semibold text-gray-900 dark:text-white"
             v-text="`Layout Preview: ${windowName}`"
           />
-          <div
-            v-if="selectedPane"
-            class="p-2 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg flex gap-1"
-          >
-            <b v-text="'Selected:'" />
-            <span v-text="selectedPaneName" />
-          </div>
         </div>
 
         <button
@@ -31,6 +24,15 @@
 
       <!-- Layout Preview -->
       <div
+        class="flex-1 p-6 bg-white dark:bg-gray-900 border-5 border-gray-200 dark:border-gray-700 rounded-lg"
+      >
+        <a-pane-group v-if="paneIsAGroup(mainPane)" :pane-group="mainPane" />
+        <a-pane v-else :pane="mainPane" />
+      </div>
+
+      <!-- Old layout -->
+      <div
+        v-if="false"
         class="flex-1 p-6 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg"
       >
         <div class="h-full bg-gray-100 dark:bg-gray-900 rounded-lg p-4">
@@ -192,28 +194,26 @@
           </div>
         </div>
       </div>
-
-      <div
-        class="mt-4 p-4 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg"
-      >
-        <p class="text-sm text-gray-600 dark:text-gray-400">
-          <b v-text="'Instructions:'" />
-          <span
-            v-text="
-              'Click on a pane to select it, drag panes to reorder them, use split buttons to create new panes. Use command templates for quick setup or write custom commands. Export generates executable bash scripts.'
-            "
-          />
-        </p>
-      </div>
     </div>
   </div>
 </template>
 
 <script>
+import APane from './PreviewPane.vue'
+import APaneGroup from './PreviewPaneGroup.vue'
+
 export default {
   name: 'ThePreview',
 
+  components: { APane, APaneGroup },
+
   props: {
+    configuration: {
+      type: Object,
+      default: () => {}
+    },
+
+    // old props
     windowName: {
       type: String,
       default: 'main'
@@ -244,52 +244,18 @@ export default {
   },
 
   computed: {
-    rootPanes() {
-      return this.panes.filter((p) => !p.parentId) || []
-    },
-    childPanes() {
-      return this.panes.filter((p) => p.parentId) || []
+    mainPane() {
+      return this.configuration.layout
     }
   },
 
   methods: {
+    paneIsAGroup(pane) {
+      return typeof pane === 'object' && Array.isArray(pane)
+    },
+
     isSelectedPane(paneId) {
       return this.selectedPane === paneId
-    },
-
-    splitPaneStyle(paneId) {
-      if (this.selectedPane === paneId) {
-        return 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-      }
-      if (this.dragOverPane === paneId) {
-        return 'border-blue-400 bg-blue-100 dark:bg-blue-900/30 scale-105'
-      }
-      if (this.draggedPane === paneId) {
-        return 'border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 opacity-50'
-      }
-      return 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600'
-    },
-
-    handleDragStart(e, paneId) {
-      this.draggedPane = paneId
-      e.dataTransfer.effectAllowed = 'move'
-    },
-
-    handleDragOver(e, paneId) {
-      e.preventDefault()
-      e.dataTransfer.dropEffect = 'move'
-      this.dragOverPane = paneId
-    },
-
-    handleDragLeave() {
-      this.dragOverPane = null
-    },
-
-    handleDrop(e, targetPaneId) {
-      e.preventDefault()
-      this.$emit('reorder-panes', this.draggedPane, targetPaneId)
-      this.draggedPane = null
-      this.dragOverPane = null
     }
   }
 }

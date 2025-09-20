@@ -17,6 +17,7 @@
       @reorder-panes="reorderPanes"
     />
     <the-preview
+      :configuration="configuration"
       :window-name="currentWindow?.name"
       :layout="currentWindow?.layout"
       :panes="currentWindow?.panes || []"
@@ -49,6 +50,14 @@ export default {
 
   data() {
     return {
+      sessionName: 'my-session',
+      mouseEnabled: false,
+
+      selectedPane: null,
+      activeWindow: '1',
+
+      showExportDialog: false,
+
       windows: [
         {
           id: '1',
@@ -56,23 +65,18 @@ export default {
           panes: [{ id: '1', command: '', name: 'pane-1' }],
           layout: 'horizontal'
         }
-      ],
-      activeWindow: '1',
-      sessionName: 'my-session',
-      mouseEnabled: false,
-      selectedPane: null,
-      showExportDialog: false,
-
-      configuration: {
-        panes: [],
-        orientation: 'horizontal',
-        mouseEnabled: false,
-        sessionName: ''
-      }
+      ]
     }
   },
 
   computed: {
+    configuration() {
+      return {
+        sessionName: this.sessionName,
+        mouseIsEnabled: this.mouseEnabled,
+        layout: {}
+      }
+    },
     currentWindow() {
       return this.windows.find((w) => w.id === this.activeWindow)
     },

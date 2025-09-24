@@ -72,7 +72,7 @@
       <div
         class="p-4 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-600 dark:text-gray-400"
       >
-        <b class="block mb-1" v-text="'Instructions:'" />
+        <b class="block mb-1 text-black dark:text-white" v-text="'Instructions:'" />
         <span
           v-text="
             'Click on a pane to select it, drag panes to reorder them, use split buttons to create new panes. Use command templates for quick setup or write custom commands. Export generates executable bash scripts.'

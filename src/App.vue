@@ -16,7 +16,8 @@
       @split-pane="splitPane"
       @reorder-panes="reorderPanes"
     />
-    <the-preview
+    <the-editor />
+    <!-- <the-preview
       :configuration="configuration"
       :window-name="currentWindow?.name"
       :layout="currentWindow?.layout"
@@ -34,19 +35,20 @@
       :mouse-enabled="mouseEnabled"
       :panes="currentWindow?.panes || []"
       @close="showExportDialog = false"
-    />
+    /> -->
   </div>
 </template>
 
 <script>
 import TheSidebar from './components/Sidebar.vue'
 import ThePreview from './components/Preview.vue'
+import TheEditor from './components/Editor.vue'
 import ExportDialog from './components/ExportDialog.vue'
 
 export default {
   name: 'TmuxLayoutBuilder',
 
-  components: { TheSidebar, ThePreview, ExportDialog },
+  components: { TheSidebar, ThePreview, ExportDialog, TheEditor },
 
   data() {
     return {

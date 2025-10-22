@@ -39,6 +39,14 @@
         <hr class="border-gray-200 dark:border-gray-700" />
       </div>
 
+      <button class="text-center w-full p-2 bg-green-700 font-bold rounded-md">Export</button>
+
+      <div class="h-full">
+        <input-wrapper :label="'Previous layouts:'" :name="'old-layouts'">
+          <div class="bg-gray-700 rounded-md p-2">...</div>
+        </input-wrapper>
+      </div>
+
       <div v-if="selectedPane" class="flex flex-col h-full w-full">
         <div
           class="p-2 mb-5 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg flex gap-1"
@@ -67,17 +75,6 @@
             </button>
           </template>
         </div>
-      </div>
-
-      <div
-        class="p-4 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-600 dark:text-gray-400"
-      >
-        <b class="block mb-1 text-black dark:text-white" v-text="'Instructions:'" />
-        <span
-          v-text="
-            'Click on a pane to select it, drag panes to reorder them, use split buttons to create new panes. Use command templates for quick setup or write custom commands. Export generates executable bash scripts.'
-          "
-        />
       </div>
     </div>
   </div>

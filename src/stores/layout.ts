@@ -59,6 +59,8 @@ export const layout = defineStore('layout', {
 
         this.previousLayouts = configurationFromStore?.old_layouts ?? []
       }
+
+      this.saveConfigurationToStore()
     },
 
     deleteStoredConfiguration() {

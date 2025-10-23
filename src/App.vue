@@ -1,5 +1,5 @@
 <template>
-  <div class="flex h-screen bg-gray-50 dark:bg-gray-900 text-black dark:text-white">
+  <div class="flex h-screen bg-gray-900 text-black dark:text-white">
     <the-sidebar
       :session-name="sessionName"
       :mouse-enabled="mouseEnabled"
@@ -17,75 +17,35 @@
       @reorder-panes="reorderPanes"
     />
     <the-editor />
-    <!-- <the-preview
-      :configuration="configuration"
-      :window-name="currentWindow?.name"
-      :layout="currentWindow?.layout"
-      :panes="currentWindow?.panes || []"
-      :selected-pane="selectedPane"
-      :selected-pane-name="selectedPaneName"
-      @select-pane="setSelectedPane"
-      @split-pane="splitPane"
-      @show-export="showExportDialog = true"
-      @reorder-panes="reorderPanes"
-    />
-    <export-dialog
-      :show="showExportDialog"
-      :session-name="sessionName"
-      :mouse-enabled="mouseEnabled"
-      :panes="currentWindow?.panes || []"
-      @close="showExportDialog = false"
-    /> -->
+
+    <div class="flex-1 p-3">
+      <div class="h-full flex-1 p-5 bg-gray-900 border-5 border-gray-700 rounded-lg">
+        <a-pane-group v-if="isGroup" :pane="mainPane" />
+        <a-pane v-else :pane="mainPane" />
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
 import TheSidebar from './components/Sidebar.vue'
-import ThePreview from './components/Preview.vue'
-import TheEditor from './components/Editor.vue'
-import ExportDialog from './components/ExportDialog.vue'
+import APane from './components/PreviewPane.vue'
+import APaneGroup from './components/PreviewPaneGroup.vue'
 
 export default {
   name: 'TmuxLayoutBuilder',
 
-  components: { TheSidebar, ThePreview, ExportDialog, TheEditor },
+  components: { TheSidebar, APane, APaneGroup },
 
   data() {
     return {
-      sessionName: 'my-session',
-      mouseEnabled: false,
-
-      selectedPane: null,
-      activeWindow: '1',
-
-      showExportDialog: false,
-
-      windows: [
-        {
-          id: '1',
-          name: 'main',
-          panes: [{ id: '1', command: '', name: 'pane-1' }],
-          layout: 'horizontal'
-        }
-      ]
+      mainPane: { id: 0, children: [], direction: null }
     }
   },
 
   computed: {
-    configuration() {
-      return {
-        sessionName: this.sessionName,
-        mouseIsEnabled: this.mouseEnabled,
-        layout: {}
-      }
-    },
-    currentWindow() {
-      return this.windows.find((w) => w.id === this.activeWindow)
-    },
-    selectedPaneName() {
-      if (!this.selectedPane || !this.currentWindow) return ''
-      const pane = this.currentWindow.panes.find((p) => p.id === this.selectedPane)
-      return pane ? pane.name : ''
+    isGroup() {
+      return this.mainPane?.items?.length ?? false
     }
   },
 

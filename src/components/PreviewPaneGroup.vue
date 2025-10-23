@@ -1,42 +1,32 @@
 <template>
-  <div v-if="isPaneGroup(paneGroup)" :class="panesGroupDirection">
-    <template v-for="(pane, p) in groupPanes" :key="p">
-      <preview-pane-group v-if="isPaneGroup(pane)" />
-      <a-pane v-else :pane="paneGroup" />
-    </template>
+  <div v-if="isGroup" class="gap-2" :class="groupClass">
+    <a-pane v-for="(item, i) in pane.items" :key="i" :pane="item" />
   </div>
+  <a-pane v-else :pane="pane" />
 </template>
 
 <script>
-import APane from './PreviewPane.vue'
-
 export default {
   name: 'PreviewPaneGroup',
 
-  components: { APane },
-
   props: {
-    paneGroup: {
-      type: Array,
-      default: () => []
+    pane: {
+      type: Object,
+      default: () => {
+        return { id: 0, children: [], direction: null }
+      }
     }
   },
 
   computed: {
-    panesGroupDirection() {
-      if (pane?.direction == 'vertical') {
-        return 'flex flex-col'
-      }
-      return 'flex flex-row'
+    isGroup() {
+      return this.pane?.items?.length ?? false
     },
-    groupPanes() {
-      return []
-    }
-  },
-
-  methods: {
-    isPaneGroup(pane) {
-      return Array.isArray(pane)
+    groupDirection() {
+      return this.pane?.direction ?? 'horizontal'
+    },
+    groupClass() {
+      return { horizontal: 'flex flex-row', vertical: 'flex flex-col' }[this.groupDirection]
     }
   }
 }

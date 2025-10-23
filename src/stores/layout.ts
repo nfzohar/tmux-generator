@@ -7,6 +7,7 @@ export const layout = defineStore('layout', {
     previousLayouts: [],
 
     currentLayout: {
+      name: '',
       panes: {},
       commands: []
     }

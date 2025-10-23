@@ -1,24 +1,38 @@
 <template>
-  <div
-    class="w-85 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 p-6 overflow-y-hidden"
-  >
+  <div class="w-85 bg-gray-800 border-r border-gray-700 p-6 overflow-y-hidden">
     <div class="flex flex-col justify-between h-full gap-5">
       <div class="flex flex-col gap-5">
         <div>
-          <h1 class="text-2xl font-bold text-gray-900 dark:text-white capitalize" v-text="title" />
+          <h1 class="text-2xl font-bold text-white capitalize" v-text="title" />
           <p
-            class="text-xs text-gray-600 dark:text-gray-400"
+            class="text-xs text-gray-400"
             v-text="'Visually create TMUX layouts and export as scripts'"
           />
         </div>
+
+        <hr class="border-gray-700" />
 
         <input-wrapper :label="'Session Name'" :name="'session-name'">
           <input
             v-model="session"
             id="session-name"
             type="text"
-            class="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            class="mt-1 block w-full px-3 py-2 border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-700 text-white"
             placeholder="My Session"
+          />
+        </input-wrapper>
+
+        <input-wrapper
+          :label="`Add a 'Is TMUX installed' check`"
+          :label-position="'bottom'"
+          :name="'tmux-installed-check'"
+          type="checkbox"
+        >
+          <input
+            id="tmux-installed-check"
+            v-model="mouse"
+            type="checkbox"
+            class="rounded border-gray-600"
           />
         </input-wrapper>
 
@@ -32,50 +46,60 @@
             id="mouse-enabled"
             v-model="mouse"
             type="checkbox"
-            class="rounded border-gray-300 dark:border-gray-600"
+            class="rounded border-gray-600"
           />
         </input-wrapper>
 
-        <hr class="border-gray-200 dark:border-gray-700" />
-      </div>
+        <hr class="border-gray-700" />
 
-      <button class="text-center w-full p-2 bg-green-700 font-bold rounded-md">Export</button>
-
-      <div class="h-full">
-        <input-wrapper :label="'Previous layouts:'" :name="'old-layouts'">
-          <div class="bg-gray-700 rounded-md p-2">...</div>
-        </input-wrapper>
-      </div>
-
-      <div v-if="selectedPane" class="flex flex-col h-full w-full">
-        <div
-          class="p-2 mb-5 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg flex gap-1"
-        >
-          <b class="mr-1" v-text="'Selected:'" />
-          <span v-text="selectedPaneName" />
-        </div>
-
-        <span
-          class="text-sm font-medium text-blue-700 dark:text-blue-300"
-          v-text="'Selected Pane Actions'"
+        <button
+          class="text-center w-full p-2 bg-green-700 hover:bg-green-800 font-bold rounded-md cursor-pointer"
+          v-text="'Export'"
         />
 
+        <hr class="border-gray-700" />
+      </div>
+
+      <div v-show="showOldLayouts" class="flex flex-col gap-2 h-full overflow-scroll">
+        <span
+          v-if="!oldLayouts?.length"
+          class="flex flex-col gap-1 bg-gray-700 rounded-md p-2 text-sm text-gray-400"
+          v-text="'No previous layouts.'"
+        />
         <div
-          class="grid gap-2 mt-2 grid-cols-1"
-          :class="`grid-rows-${visibleSelectedPaneActionsCount}`"
+          v-else
+          v-for="(layout, l) in oldLayouts"
+          class="flex flex-col bg-gray-700 rounded-md p-2 hover:bg-gray-600"
+          :key="l"
         >
-          <template v-for="(action, a) in selectedPaneActions" :key="a">
+          <div class="flex items-center">
+            <span class="w-full font-bold capitalize" v-text="layout?.name" />
             <button
-              v-if="action.show"
-              class="flex items-center gap-2 px-3 py-2 text-sm rounded-md transition-colors cursor-pointer capitalize bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-blue-600 hover:text-white"
-              @click="action.run"
+              class="text-center bg-green-700 rounded-md font-bold cursor-pointer hover:bg-green-600 h-8 w-8"
+              :title="'Load this layout.'"
+              @click="''"
             >
-              <i :class="action.icon" />
-              <span class="capitalize" v-text="action.label" />
+              <i class="fa fa-square-up-right" />
             </button>
-          </template>
+          </div>
+
+          <details v-if="layout?.commands?.length">
+            <summary style="list-style: none" class="underline cursor-pointer" v-text="'Info'" />
+            <span
+              v-for="(command, c) in layout?.commands"
+              :key="c"
+              class="block"
+              v-text="`Pane ${c}: ${command}`"
+            />
+          </details>
         </div>
       </div>
+
+      <button
+        class="w-full text-left font-bold cursor-pointer hover:underline"
+        v-text="'Show previous layouts'"
+        @click="showOldLayouts = !showOldLayouts"
+      />
     </div>
   </div>
 </template>
@@ -88,31 +112,10 @@ export default {
 
   components: { InputWrapper },
 
-  props: {
-    sessionName: {
-      type: String,
-      default: ''
-    },
-    selectedPane: {
-      type: String,
-      default: null
-    },
-    mouseEnabled: {
-      type: Boolean,
-      default: false
-    },
-    panes: {
-      type: Array,
-      default: () => []
-    },
-    currentLayout: {
-      type: String,
-      default: 'horizontal'
-    }
-  },
-
   data() {
     return {
+      showOldLayouts: false,
+
       session: this.sessionName,
       mouse: this.mouseEnabled,
       templateCategory: 'all',
@@ -126,81 +129,8 @@ export default {
     title() {
       return document.title
     },
-    canDeletePanes() {
-      return this.panes.length > 1 ?? false
-    },
-    selectedPaneActions() {
-      return [
-        {
-          show: true,
-          label: 'Split Horizontal',
-          icon: 'fa-solid fa-table-columns',
-          run: () => this.$emit('split-pane', this.selectedPane, 'horizontal')
-        },
-        {
-          show: true,
-          label: 'Split Vertical',
-          icon: 'fa-solid fa-table-columns -rotate-90',
-          run: () => this.$emit('split-pane', this.selectedPane, 'vertical')
-        },
-        {
-          show: this.canDeletePanes,
-          label: 'Remove selected pane',
-          icon: 'fa fa-trash',
-          run: () => this.$emit('remove-pane', this.selectedPane)
-        }
-      ]
-    },
-    visibleSelectedPaneActionsCount() {
-      return this.selectedPaneActions.filter((action) => action.show).length
-    }
-  },
-
-  created() {
-    // Set delete function key
-    window.addEventListener('keydown', (event) => {
-      if (event.key === 'Delete') {
-        if (this.canDeletePanes) {
-          this.$emit('remove-pane', this.selectedPane)
-        }
-      }
-    })
-  },
-
-  methods: {
-    paneClass(paneId) {
-      if (this.selectedPane === paneId) {
-        return 'bg-blue-50 dark:bg-blue-900/20 border-blue-300 dark:border-blue-700'
-      }
-      if (this.dragOverPane === paneId) {
-        return 'bg-blue-100 dark:bg-blue-900/30 border-blue-400 dark:border-blue-600 scale-105'
-      }
-      if (this.draggedPane === paneId) {
-        return 'bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 opacity-50'
-      }
-      return 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'
-    },
-
-    handleDragStart(e, paneId) {
-      this.draggedPane = paneId
-      e.dataTransfer.effectAllowed = 'move'
-    },
-
-    handleDragOver(e, paneId) {
-      e.preventDefault()
-      e.dataTransfer.dropEffect = 'move'
-      this.dragOverPane = paneId
-    },
-
-    handleDragLeave() {
-      this.dragOverPane = null
-    },
-
-    handleDrop(e, targetPaneId) {
-      e.preventDefault()
-      this.$emit('reorder-panes', this.draggedPane, targetPaneId)
-      this.draggedPane = null
-      this.dragOverPane = null
+    oldLayouts() {
+      return this.$layout?.previousLayouts ?? []
     }
   }
 }

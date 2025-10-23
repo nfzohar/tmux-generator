@@ -5,7 +5,6 @@ const storeLocalStorageKey = 'stored_layout'
 export const layout = defineStore('layout', {
   state: () => ({
     previousLayouts: [],
-
     currentLayout: {
       name: '',
       panes: {},
@@ -47,7 +46,8 @@ export const layout = defineStore('layout', {
       localStorage.setItem(
         storeLocalStorageKey,
         JSON.stringify({
-          old_layouts: this.previousLayouts
+          old_layouts: this.previousLayouts,
+          current_layout: this.currentLayout
         })
       )
     },
@@ -59,6 +59,7 @@ export const layout = defineStore('layout', {
         configurationFromStore = JSON.parse(configurationFromStore)
 
         this.previousLayouts = configurationFromStore?.old_layouts ?? []
+        this.currentLayout = configurationFromStore?.current_layout
       }
 
       this.saveConfigurationToStore()

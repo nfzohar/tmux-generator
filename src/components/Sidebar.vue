@@ -1,5 +1,5 @@
 <template>
-  <div class="w-80 bg-gray-800 border-r border-gray-700 p-6 overflow-y-hidden">
+  <div class="w-85 bg-gray-800 border-r border-gray-700 p-6 overflow-y-hidden">
     <div class="flex flex-col justify-between h-full gap-5">
       <div class="flex flex-col gap-5">
         <div>
@@ -67,6 +67,7 @@
           <button
             class="text-center w-full p-1 bg-green-800 hover:bg-green-700 font-bold rounded-md cursor-pointer"
             :title="'Export the current layout configuration.'"
+            @click="$layout.saveCurrentLayoutToOldLayouts()"
           >
             <i class="fa fa-file-export" />
             {{ 'Export' }}
@@ -90,19 +91,30 @@
         />
         <div
           v-else
-          v-for="(layout, l) in oldLayouts"
+          v-for="(oldLayout, l) in oldLayouts"
           class="flex flex-col bg-gray-700 rounded-md p-2 hover:bg-gray-600"
           :key="l"
         >
           <div class="flex items-center">
-            <span class="w-full font-bold capitalize" v-text="layout?.name" />
-            <button
-              class="text-center bg-green-700 rounded-md font-bold cursor-pointer hover:bg-green-600 h-8 w-8"
-              :title="'Load this layout.'"
-              @click="''"
-            >
-              <i class="fa fa-square-up-right" />
-            </button>
+            <span class="w-full font-bold capitalize" v-text="oldLayout?.name" />
+
+            <div class="flex items-center gap-2">
+              <button
+                class="text-center bg-red-700 rounded-md font-bold cursor-pointer hover:bg-red-600 h-8 w-8"
+                :title="'Delete this layout.'"
+                @click="deleteFromOldLayouts(oldLayout?.id)"
+              >
+                <i class="fa fa-trash" />
+              </button>
+
+              <button
+                class="text-center bg-green-700 rounded-md font-bold cursor-pointer hover:bg-green-600 h-8 w-8"
+                :title="'Load this layout.'"
+                @click="loadOldLayout(oldLayout?.id)"
+              >
+                <i class="fa fa-square-up-right" />
+              </button>
+            </div>
           </div>
 
           <details v-if="layout?.commands?.length">
@@ -133,7 +145,6 @@ export default {
       tmuxSessionName: '',
       tmuxInstalledCheck: false,
       mouseInputEnabled: false,
-
       showOldLayouts: false
     }
   },
@@ -182,6 +193,18 @@ export default {
     resetToDefault() {
       if (window.confirm('Are you sure? This will permanently delete unsaved layouts.')) {
         this.$layout.resetCurrentLayout()
+      }
+    },
+
+    deleteFromOldLayouts(oldLayoutId) {
+      if (window.confirm('Delete this layout? This action cannot be undone.')) {
+        this.$layout.loadOldIntoCurrentLayout(oldLayoutId)
+      }
+    },
+
+    loadOldLayout(oldLayoutId) {
+      if (window.confirm('This will overwrite your current layout. Are you sure?')) {
+        this.$layout.loadOldIntoCurrentLayout(oldLayoutId)
       }
     }
   }

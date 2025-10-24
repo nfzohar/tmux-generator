@@ -30,7 +30,7 @@
     </div>
 
     <textarea
-      v-model="command"
+      v-model="paneCommand"
       class="flex-1 bg-gray-900 rounded border border-gray-700 p-3 focus:outline-none"
     />
   </div>
@@ -49,10 +49,35 @@ export default {
     }
   },
 
+  data() {
+    return {
+      paneCommand: ''
+    }
+  },
+
   computed: {
     isGroup() {
       return this.pane?.items?.length ?? false
+    },
+    currentLayoutCommands() {
+      return this.$layout?.commandList
     }
+  },
+
+  watch: {
+    paneCommand() {
+      this.$layout.updatePaneCommand(this.pane?.id, this.paneCommand)
+    },
+    currentLayoutCommands: {
+      deep: true,
+      handler: function () {
+        this.paneCommand = this.currentLayoutCommands[this.pane?.id]
+      }
+    }
+  },
+
+  mounted() {
+    this.paneCommand = this.currentLayoutCommands[this.pane?.id]
   }
 }
 </script>

@@ -22,17 +22,12 @@ export const layout = defineStore('layout', {
     panes(): Object {
       return this.currentLayout?.panes ?? []
     },
-    commands(): Object {
+    commandList(): Object {
       return this.currentLayout?.commands ?? []
     }
   },
 
   actions: {
-    updateCurrentLayout(layout: Array) {
-      this.currentLayout = layout
-      this.saveConfigurationToStore()
-    },
-
     updateCurrentLayoutProp(key, value) {
       this.currentLayout[key] = value
       this.saveConfigurationToStore()
@@ -47,10 +42,26 @@ export const layout = defineStore('layout', {
         commands: [],
         panes: { id: 0, children: [], direction: null }
       }
+      this.saveConfigurationToStore()
     },
 
-    updateOldLayoutList(layout: Object) {
-      this.previousLayouts = [layout, ...this.previousLayouts]
+    loadOldIntoCurrentLayout(oldLayoutId) {
+      let temp = this.previousLayouts.filter((layout) => layout?.id != oldLayoutId).pop()
+      this.previousLayouts = temp
+      this.saveConfigurationToStore()
+    },
+
+    deleteOldLayout(oldLayoutId) {
+      this.currentLayout = this.previousLayouts.filter((layout) => layout?.id == oldLayoutId).pop()
+      this.saveConfigurationToStore()
+    },
+
+    saveCurrentLayoutToOldLayouts() {
+      let layoutTemp = this.currentLayout
+
+      layoutTemp['id'] = Math.floor(Math.random() * 99)
+
+      this.previousLayouts = [layoutTemp, ...this.previousLayouts]
       this.saveConfigurationToStore()
     },
 
@@ -61,6 +72,11 @@ export const layout = defineStore('layout', {
       // for (const child of this.panes.children) {
       //   traverse(child)
       // }
+    },
+
+    updatePaneCommand(paneId, command) {
+      this.currentLayout.commands[paneId] = command
+      this.saveConfigurationToStore()
     },
 
     saveConfigurationToStore() {

@@ -27,6 +27,7 @@
           <i
             class="bg-gray-700 border-gray-700 border py-1 px-2 rounded-md fa fa-window-minimize"
           />
+
           <span
             class="bg-gray-700 border-gray-700 border py-1 px-2 rounded-md cursor-pointer"
             :title="'Toggle fullscreen'"

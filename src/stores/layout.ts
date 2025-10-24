@@ -7,8 +7,10 @@ export const layout = defineStore('layout', {
     previousLayouts: [],
     currentLayout: {
       name: '',
-      panes: {},
-      commands: []
+      enabledMouseInput: false,
+      includeTmuxInstalledCheck: false,
+      commands: [],
+      panes: {}
     }
   }),
 
@@ -40,6 +42,11 @@ export const layout = defineStore('layout', {
         panes: {},
         commands: []
       }
+    },
+
+    updateCurrentLayoutProp(key, value) {
+      this.currentLayout[key] = value
+      this.saveConfigurationToStore()
     },
 
     saveConfigurationToStore() {

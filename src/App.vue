@@ -29,13 +29,11 @@
 
 <script>
 import TheSidebar from './components/Sidebar.vue'
-import APane from './components/PreviewPane.vue'
-import APaneGroup from './components/PreviewPaneGroup.vue'
 
 export default {
   name: 'TmuxLayoutBuilder',
 
-  components: { TheSidebar, APane, APaneGroup },
+  components: { TheSidebar },
 
   data() {
     return {

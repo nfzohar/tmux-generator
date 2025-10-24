@@ -7,7 +7,7 @@
 
 <script>
 export default {
-  name: 'PreviewPaneGroup',
+  name: 'APaneGroup',
 
   props: {
     pane: {

@@ -2,8 +2,8 @@ import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import App from './App.vue'
 
-import PreviewPane from './components/PreviewPane.vue'
-import PreviewPaneGroup from './components/PreviewPaneGroup.vue'
+import PreviewPane from './components/Pane.vue'
+import PreviewPaneGroup from './components/PaneGroup.vue'
 
 import '@fortawesome/fontawesome-free/css/all.css'
 

@@ -14,7 +14,7 @@
 
         <input-wrapper :label="'Session Name'" :name="'session-name'">
           <input
-            v-model="session"
+            v-model="tmuxSessionName"
             id="session-name"
             type="text"
             class="mt-1 block w-full px-3 py-2 border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-700 text-white"
@@ -23,14 +23,15 @@
         </input-wrapper>
 
         <input-wrapper
-          :label="`Add a 'Is TMUX installed' check`"
+          :label="`Add an 'Is TMUX installed' check`"
           :label-position="'bottom'"
           :name="'tmux-installed-check'"
+          :title="`Check if tmux is installed on your system and install it if it's not.`"
           type="checkbox"
         >
           <input
             id="tmux-installed-check"
-            v-model="mouse"
+            v-model="tmuxInstalledCheck"
             type="checkbox"
             class="rounded border-gray-600"
           />
@@ -40,11 +41,12 @@
           :label="'Enable mouse controls'"
           :label-position="'bottom'"
           :name="'mouse-enabled'"
+          :title="`Enable managing the layout with mouse input.`"
           type="checkbox"
         >
           <input
             id="mouse-enabled"
-            v-model="mouse"
+            v-model="mouseInputEnabled"
             type="checkbox"
             class="rounded border-gray-600"
           />
@@ -58,12 +60,18 @@
         />
 
         <hr class="border-gray-700" />
+
+        <button
+          class="w-full text-left font-bold cursor-pointer hover:underline"
+          v-text="'Show previous layouts'"
+          @click="showOldLayouts = !showOldLayouts"
+        />
       </div>
 
       <div v-show="showOldLayouts" class="flex flex-col gap-2 h-full overflow-scroll">
         <span
           v-if="!oldLayouts?.length"
-          class="flex flex-col gap-1 bg-gray-700 rounded-md p-2 text-sm text-gray-400"
+          class="w-full text-sm text-gray-400"
           v-text="'No previous layouts.'"
         />
         <div
@@ -94,12 +102,6 @@
           </details>
         </div>
       </div>
-
-      <button
-        class="w-full text-left font-bold cursor-pointer hover:underline"
-        v-text="'Show previous layouts'"
-        @click="showOldLayouts = !showOldLayouts"
-      />
     </div>
   </div>
 </template>
@@ -114,14 +116,11 @@ export default {
 
   data() {
     return {
-      showOldLayouts: false,
+      tmuxSessionName: '',
+      tmuxInstalledCheck: false,
+      mouseInputEnabled: false,
 
-      session: this.sessionName,
-      mouse: this.mouseEnabled,
-      templateCategory: 'all',
-      showTemplates: false,
-      draggedPane: null,
-      dragOverPane: null
+      showOldLayouts: false
     }
   },
 
@@ -129,9 +128,30 @@ export default {
     title() {
       return document.title
     },
+    currentLayout() {
+      return this.$layout?.currentLayout
+    },
     oldLayouts() {
       return this.$layout?.previousLayouts ?? []
     }
+  },
+
+  watch: {
+    tmuxSessionName() {
+      this.$layout.updateCurrentLayoutProp('name', this.tmuxSessionName)
+    },
+    mouseInputEnabled() {
+      this.$layout.updateCurrentLayoutProp('enabledMouseInput', this.mouseInputEnabled)
+    },
+    tmuxInstalledCheck() {
+      this.$layout.updateCurrentLayoutProp('includeTmuxInstalledCheck', this.tmuxInstalledCheck)
+    }
+  },
+
+  mounted() {
+    this.tmuxSessionName = this.currentLayout?.name ?? ''
+    this.mouseInputEnabled = this.currentLayout?.enabledMouseInput ?? false
+    this.tmuxInstalledCheck = this.currentLayout?.includeTmuxInstalledCheck ?? false
   }
 }
 </script>

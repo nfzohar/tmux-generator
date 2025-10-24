@@ -16,12 +16,38 @@
       @split-pane="splitPane"
       @reorder-panes="reorderPanes"
     />
-    <the-editor />
 
-    <div class="flex-1 p-3">
-      <div class="h-full flex-1 p-5 bg-gray-900 border-5 border-gray-700 rounded-lg">
-        <a-pane-group v-if="isGroup" :pane="mainPane" />
-        <a-pane v-else :pane="mainPane" />
+    <div class="flex flex-col w-full mx-2 py-1 h-screen">
+      <div
+        class="flex items-center justify-between h-min py-1 px-2 bg-gray-600 border-3 border-gray-700 rounded-t-md"
+      >
+        <span class="font-bold text-sm" v-text="sessionName" />
+
+        <div class="flex gap-2">
+          <i
+            class="bg-gray-700 border-gray-700 border py-1 px-2 rounded-md fa fa-window-minimize"
+          />
+          <span
+            class="bg-gray-700 border-gray-700 border py-1 px-2 rounded-md cursor-pointer"
+            :title="'Toggle fullscreen'"
+            @click="toggleFullscreen"
+          >
+            <i class="fa fa-window-maximize" />
+          </span>
+
+          <span
+            class="bg-red-700 border-red-700 border py-1 px-2 rounded-md cursor-pointer"
+            :title="'Exit app'"
+            @click="exitApp"
+          >
+            <i class="fa fa-times" />
+          </span>
+        </div>
+      </div>
+
+      <div class="h-full p-3 bg-black border-x-3 border-b-3 border-gray-700 rounded-b-md">
+        <a-pane-group v-if="isGroup" :pane="rootPane" />
+        <a-pane v-else :pane="rootPane" />
       </div>
     </div>
   </div>
@@ -37,87 +63,49 @@ export default {
 
   data() {
     return {
-      mainPane: { id: 0, children: [], direction: null }
+      rootPane: { id: 0, children: [], direction: null }
     }
   },
 
   computed: {
     isGroup() {
-      return this.mainPane?.items?.length ?? false
+      return this.rootPane?.items?.length ?? false
+    },
+    currentLayout() {
+      return this.$layout.currentLayout ?? null
+    },
+    sessionName() {
+      return this.currentLayout?.name ?? 'New session'
     }
   },
 
   methods: {
-    splitPane(paneId, direction) {
-      if (!this.currentWindow) return
+    toggleFullscreen() {
+      if (document.fullscreenElement) {
+        if (document.exitFullscreen) {
+          document.exitFullscreen()
+        } else if (document.webkitExitFullscreen) {
+          document.webkitExitFullscreen()
+        } else if (document.msExitFullscreen) {
+          document.msExitFullscreen()
+        }
+      } else {
+        const elem = document.documentElement
 
-      const newPane = {
-        id: Date.now().toString(),
-        command: '',
-        name: `pane-${this.currentWindow.panes.length + 1}`,
-        parentId: paneId,
-        splitDirection: direction
-      }
-
-      this.windows = this.windows.map((w) =>
-        w.id === this.activeWindow ? { ...w, panes: [...w.panes, newPane] } : w
-      )
-    },
-    addPane() {
-      if (!this.currentWindow) return
-
-      const newPane = {
-        id: Date.now().toString(),
-        command: '',
-        name: `pane-${this.currentWindow.panes.length + 1}`
-      }
-
-      this.windows = this.windows.map((w) =>
-        w.id === this.activeWindow ? { ...w, panes: [...w.panes, newPane] } : w
-      )
-    },
-    removePane(paneId) {
-      if (!this.currentWindow || this.currentWindow.panes.length <= 1) return
-
-      this.windows = this.windows.map((w) =>
-        w.id === this.activeWindow ? { ...w, panes: w.panes.filter((p) => p.id !== paneId) } : w
-      )
-
-      if (this.selectedPane === paneId) {
-        this.selectedPane = null
+        if (elem.requestFullscreen) {
+          elem.requestFullscreen()
+        } else if (elem.webkitRequestFullscreen) {
+          elem.webkitRequestFullscreen()
+        } else if (elem.msRequestFullscreen) {
+          elem.msRequestFullscreen()
+        }
       }
     },
-    updatePane(paneId, updates) {
-      this.windows = this.windows.map((w) =>
-        w.id === this.activeWindow
-          ? {
-              ...w,
-              panes: w.panes.map((p) => (p.id === paneId ? { ...p, ...updates } : p))
-            }
-          : w
-      )
-    },
-    changeLayout(layout) {
-      this.windows = this.windows.map((w) => (w.id === this.activeWindow ? { ...w, layout } : w))
-    },
-    setSelectedPane(paneId) {
-      this.selectedPane = paneId
-    },
-    reorderPanes(draggedPaneId, targetPaneId) {
-      if (!draggedPaneId || !this.currentWindow || draggedPaneId === targetPaneId) {
-        return
+
+    exitApp() {
+      if (window.confirm('Are you sure you want to leave the app?')) {
+        window.close()
       }
-
-      const newPanes = [...this.currentWindow.panes]
-      const draggedIndex = newPanes.findIndex((p) => p.id === draggedPaneId)
-      const targetIndex = newPanes.findIndex((p) => p.id === targetPaneId)
-
-      const [removed] = newPanes.splice(draggedIndex, 1)
-      newPanes.splice(targetIndex, 0, removed)
-
-      this.windows = this.windows.map((w) =>
-        w.id === this.activeWindow ? { ...w, panes: newPanes } : w
-      )
     }
   }
 }

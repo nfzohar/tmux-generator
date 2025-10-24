@@ -6,7 +6,8 @@ export const layout = defineStore('layout', {
   state: () => ({
     previousLayouts: [],
     currentLayout: {
-      name: '',
+      name: 'New Session',
+      nextPaneId: 1,
       enabledMouseInput: false,
       includeTmuxInstalledCheck: false,
       commands: [],
@@ -32,21 +33,34 @@ export const layout = defineStore('layout', {
       this.saveConfigurationToStore()
     },
 
-    updateOldLayoutList(layout: Object) {
-      this.previousLayouts = [layout, ...this.previousLayouts]
+    updateCurrentLayoutProp(key, value) {
+      this.currentLayout[key] = value
       this.saveConfigurationToStore()
     },
 
     resetCurrentLayout() {
       this.currentLayout = {
-        panes: {},
-        commands: []
+        name: 'New Session',
+        nextPaneId: 1,
+        enabledMouseInput: false,
+        includeTmuxInstalledCheck: false,
+        commands: [],
+        panes: { id: 0, children: [], direction: null }
       }
     },
 
-    updateCurrentLayoutProp(key, value) {
-      this.currentLayout[key] = value
+    updateOldLayoutList(layout: Object) {
+      this.previousLayouts = [layout, ...this.previousLayouts]
       this.saveConfigurationToStore()
+    },
+
+    splitPane(paneId, direction) {
+      console.log(node.id, node.direction)
+
+      // Loop through all children recursively
+      // for (const child of this.panes.children) {
+      //   traverse(child)
+      // }
     },
 
     saveConfigurationToStore() {

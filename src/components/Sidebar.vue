@@ -1,5 +1,5 @@
 <template>
-  <div class="w-85 bg-gray-800 border-r border-gray-700 p-6 overflow-y-hidden">
+  <div class="w-80 bg-gray-800 border-r border-gray-700 p-6 overflow-y-hidden">
     <div class="flex flex-col justify-between h-full gap-5">
       <div class="flex flex-col gap-5">
         <div>
@@ -54,16 +54,30 @@
 
         <hr class="border-gray-700" />
 
-        <button
-          class="text-center w-full p-2 bg-green-700 hover:bg-green-800 font-bold rounded-md cursor-pointer"
-          v-text="'Export'"
-        />
+        <div class="flex gap-2">
+          <button
+            class="text-center w-full p-1 bg-red-800 hover:bg-red-700 font-bold rounded-md cursor-pointer"
+            :title="'Reset current layout configuration.'"
+            @click="resetToDefault()"
+          >
+            <i class="fa fa-reply" />
+            {{ 'Reset' }}
+          </button>
+
+          <button
+            class="text-center w-full p-1 bg-green-800 hover:bg-green-700 font-bold rounded-md cursor-pointer"
+            :title="'Export the current layout configuration.'"
+          >
+            <i class="fa fa-file-export" />
+            {{ 'Export' }}
+          </button>
+        </div>
 
         <hr class="border-gray-700" />
 
         <button
           class="w-full text-left font-bold cursor-pointer hover:underline"
-          v-text="'Show previous layouts'"
+          v-text="`Show previous layouts (${oldLayouts?.length})`"
           @click="showOldLayouts = !showOldLayouts"
         />
       </div>
@@ -137,6 +151,12 @@ export default {
   },
 
   watch: {
+    currentLayout: {
+      deep: true,
+      handler: function () {
+        this.setValuesFromStore()
+      }
+    },
     tmuxSessionName() {
       this.$layout.updateCurrentLayoutProp('name', this.tmuxSessionName)
     },
@@ -149,9 +169,21 @@ export default {
   },
 
   mounted() {
-    this.tmuxSessionName = this.currentLayout?.name ?? ''
-    this.mouseInputEnabled = this.currentLayout?.enabledMouseInput ?? false
-    this.tmuxInstalledCheck = this.currentLayout?.includeTmuxInstalledCheck ?? false
+    this.setValuesFromStore()
+  },
+
+  methods: {
+    setValuesFromStore() {
+      this.tmuxSessionName = this.currentLayout?.name ?? ''
+      this.mouseInputEnabled = this.currentLayout?.enabledMouseInput ?? false
+      this.tmuxInstalledCheck = this.currentLayout?.includeTmuxInstalledCheck ?? false
+    },
+
+    resetToDefault() {
+      if (window.confirm('Are you sure? This will permanently delete unsaved layouts.')) {
+        this.$layout.resetCurrentLayout()
+      }
+    }
   }
 }
 </script>

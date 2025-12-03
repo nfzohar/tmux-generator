@@ -4,6 +4,7 @@ const storeLocalStorageKey = 'stored_layout'
 
 export const layout = defineStore('layout', {
   state: () => ({
+    refreshTokenVal: 0,
     previousLayouts: [],
     currentLayout: {
       name: 'New Session',
@@ -18,6 +19,9 @@ export const layout = defineStore('layout', {
   getters: {
     layout(): Object {
       return this.currentLayout
+    },
+    refreshToken(): Number {
+      return this.refreshTokenVal
     },
     panes(): Object {
       return this.currentLayout?.panes ?? []
@@ -40,7 +44,7 @@ export const layout = defineStore('layout', {
         enabledMouseInput: false,
         includeTmuxInstalledCheck: false,
         commands: [],
-        panes: { id: 0, children: [], direction: null }
+        panes: { id: 0, items: [], direction: null }
       }
       this.saveConfigurationToStore()
     },
@@ -66,17 +70,40 @@ export const layout = defineStore('layout', {
     },
 
     splitPane(paneId, direction) {
-      console.log(node.id, node.direction)
+      this.traversePanes(this.currentLayout?.panes, (pane) => {
+        console.log(pane)
 
-      // Loop through all children recursively
-      // for (const child of this.panes.children) {
-      //   traverse(child)
-      // }
+        if (pane?.id == paneId) {
+          pane['items'] = [
+            { id: paneId, direction: '', items: [] },
+            { id: paneId + 1, direction: '', items: [] }
+          ]
+          pane['direction'] = direction
+          pane['id'] = null
+        }
+      })
+
+      this.refresh()
+      this.saveConfigurationToStore()
+    },
+
+    traversePanes(pane, method = () => {}) {
+      if (pane?.items?.length) {
+        pane?.items.forEach((childPane) => {
+          this.traversePanes(childPane, method)
+        })
+      } else {
+        method(pane)
+      }
     },
 
     updatePaneCommand(paneId, command) {
       this.currentLayout.commands[paneId] = command
       this.saveConfigurationToStore()
+    },
+
+    refresh() {
+      this.refreshTokenVal = this.refreshTokenVal + 1
     },
 
     saveConfigurationToStore() {

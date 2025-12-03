@@ -1,16 +1,14 @@
 <template>
   <div class="w-85 bg-gray-800 border-r border-gray-700 p-6 overflow-y-hidden">
     <div class="flex flex-col justify-between h-full gap-5">
-      <div class="flex flex-col gap-5">
+      <div class="flex flex-col gap-7">
         <div>
           <h1 class="text-2xl font-bold text-white capitalize" v-text="title" />
           <p
             class="text-xs text-gray-400"
-            v-text="'Visually create TMUX layouts and export as scripts'"
+            v-text="'Build & export your new TMUX layout'"
           />
         </div>
-
-        <hr class="border-gray-700" />
 
         <input-wrapper :label="'Session Name'" :name="'session-name'">
           <input
@@ -23,7 +21,7 @@
         </input-wrapper>
 
         <input-wrapper
-          :label="`Add an 'Is TMUX installed' check`"
+          :label="`Add 'Is TMUX installed' check`"
           :label-position="'bottom'"
           :name="'tmux-installed-check'"
           :title="`Check if tmux is installed on your system and install it if it's not.`"
@@ -52,8 +50,6 @@
           />
         </input-wrapper>
 
-        <hr class="border-gray-700" />
-
         <div class="flex gap-2">
           <button
             class="text-center w-full p-1 bg-red-800 hover:bg-red-700 font-bold rounded-md cursor-pointer"
@@ -73,8 +69,6 @@
             {{ 'Export' }}
           </button>
         </div>
-
-        <hr class="border-gray-700" />
 
         <button
           class="w-full text-left font-bold cursor-pointer hover:underline"

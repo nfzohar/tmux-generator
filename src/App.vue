@@ -1,9 +1,8 @@
 <template>
-  <div class="flex flex-col h-screen bg-gray-300 dark:bg-slate-90 text-black dark:text-white1">
-    <div class="flex items-center justify-between px-3 w-full bg-gray-300 dark:bg-slate-80 p-2">
+  <div class="flex flex-col h-screen bg-gray-100 dark:bg-slate-900 text-black dark:text-white">
+    <div class="flex items-center justify-between p-3 w-full dark:bg-slate-800">
       <h1 class="flex items-center gap-1 w-full">
-        <b>Tmux Builder</b>
-        <small>Build & export your new TMUX layout</small>
+        <b>Tmux Builder</b>|<small>Build & export your new TMUX layout</small>
       </h1>
 
       <div class="flex items-center gap-2">
@@ -17,7 +16,7 @@
       </div>
     </div>
 
-    <div class="w-full px-1 dark:hiddeno">
+    <div class="w-full px-1 dark:hidden">
       <hr class="border" />
     </div>
 

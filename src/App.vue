@@ -1,6 +1,6 @@
 <template>
-  <div class="flex flex-col h-screen bg-slate-900 text-black dark:text-white">
-    <div class="flex items-center justify-between px-3 w-full bg-slate-800 p-2">
+  <div class="flex flex-col h-screen bg-gray-300 dark:bg-slate-90 text-black dark:text-white1">
+    <div class="flex items-center justify-between px-3 w-full bg-gray-300 dark:bg-slate-80 p-2">
       <h1 class="flex items-center gap-1 w-full">
         <b>Tmux Builder</b>
         <small>Build & export your new TMUX layout</small>
@@ -15,6 +15,10 @@
           <small v-text="'Export'" />
         </button>
       </div>
+    </div>
+
+    <div class="w-full px-1 dark:hiddeno">
+      <hr class="border" />
     </div>
 
     <layout-builder />

@@ -1,14 +1,19 @@
 <template>
-  <div class="flex flex-col h-screen bg-gray-900 text-black dark:text-white">
-    <div class="flex items-center justify-between py-3 px-5 w-full bg-gray-800">
-      <div class="flex flex-col">
-        <h1 class="text-3xl font-bold w-full" v-text="'Tmux Builder'" />
-        <p class="text-sm text-gray-400 w-full" v-text="'Build & export your new TMUX layout'" />
-      </div>
+  <div class="flex flex-col h-screen bg-slate-900 text-black dark:text-white">
+    <div class="flex items-center justify-between px-3 w-full bg-slate-800 p-2">
+      <h1 class="flex items-center gap-1 w-full">
+        <b>Tmux Builder</b>
+        <small>Build & export your new TMUX layout</small>
+      </h1>
 
       <div class="flex items-center gap-2">
-        <span>1</span>
-        <span>2</span>
+        <button
+          class="flex items-center bg-green-700 gap-2 py-1 px-3 hover:bg-green-800 transition-colors rounded-md text-white font-semibold cursor-pointer"
+          @click="splitIntoGroup('vertical')"
+        >
+          <i class="fa fa-arrows-up-down" />
+          <small v-text="'Export'" />
+        </button>
       </div>
     </div>
 
@@ -17,13 +22,12 @@
 </template>
 
 <script>
-import TheSidebar from './components/Sidebar.vue'
 import LayoutBuilder from './components/LayoutBuilder.vue'
 
 export default {
   name: 'TmuxLayoutBuilder',
 
-  components: { TheSidebar, LayoutBuilder },
+  components: { LayoutBuilder },
 
   data() {
     return {

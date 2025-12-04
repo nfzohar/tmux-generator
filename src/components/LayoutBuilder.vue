@@ -1,5 +1,14 @@
 <template>
-  <div class="m-5 rounded-md bg-gray-800 h-full p-2">
+  <div class="flex justify-evenly gap-1 rounded-lg h-full p-5">
+    <a-pane />
+    <a-pane />
+
+    <div class="w-full flex flex-col gap-1">
+      <a-pane />
+      <a-pane />
+      <a-pane />
+    </div>
+    
     <a-pane />
   </div>
 </template>

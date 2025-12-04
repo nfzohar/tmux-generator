@@ -1,13 +1,10 @@
 <template>
-  <div class="w-85 bg-gray-800 border-r border-gray-700 p-6 overflow-y-hidden">
+  <div class="w-85 bg-slate-800 border-r border-slate-700 p-6 overflow-y-hidden">
     <div class="flex flex-col justify-between h-full gap-5">
       <div class="flex flex-col gap-7">
         <div>
           <h1 class="text-2xl font-bold text-white capitalize" v-text="title" />
-          <p
-            class="text-xs text-gray-400"
-            v-text="'Build & export your new TMUX layout'"
-          />
+          <p class="text-xs text-slate-400" v-text="'Build & export your new TMUX layout'" />
         </div>
 
         <input-wrapper :label="'Session Name'" :name="'session-name'">
@@ -15,7 +12,7 @@
             v-model="tmuxSessionName"
             id="session-name"
             type="text"
-            class="mt-1 block w-full px-3 py-2 border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-700 text-white"
+            class="mt-1 block w-full px-3 py-2 border border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-slate-700 text-white"
             placeholder="My Session"
           />
         </input-wrapper>
@@ -31,7 +28,7 @@
             id="tmux-installed-check"
             v-model="tmuxInstalledCheck"
             type="checkbox"
-            class="rounded border-gray-600"
+            class="rounded border-slate-600"
           />
         </input-wrapper>
 
@@ -46,7 +43,7 @@
             id="mouse-enabled"
             v-model="mouseInputEnabled"
             type="checkbox"
-            class="rounded border-gray-600"
+            class="rounded border-slate-600"
           />
         </input-wrapper>
 
@@ -80,13 +77,13 @@
       <div v-show="showOldLayouts" class="flex flex-col gap-2 h-full overflow-scroll">
         <span
           v-if="!oldLayouts?.length"
-          class="w-full text-sm text-gray-400"
+          class="w-full text-sm text-slate-400"
           v-text="'No previous layouts.'"
         />
         <div
           v-else
           v-for="(oldLayout, l) in oldLayouts"
-          class="flex flex-col bg-gray-700 rounded-md p-2 hover:bg-gray-600"
+          class="flex flex-col bg-slate-700 rounded-md p-2 hover:bg-slate-600"
           :key="l"
         >
           <div class="flex items-center">

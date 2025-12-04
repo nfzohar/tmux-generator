@@ -2,7 +2,7 @@
   <div class="flex gap-1" :class="{ 'flex-col': type != 'checkbox' }">
     <slot v-if="labelPosition == 'bottom'" />
     <label
-      class="block text-sm font-medium text-gray-700 dark:text-gray-300 capitalize"
+      class="block text-sm font-medium text-slate-700 dark:text-slate-300 capitalize"
       :for="name"
       v-text="label"
     />

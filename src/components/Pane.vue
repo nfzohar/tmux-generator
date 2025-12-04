@@ -2,34 +2,45 @@
   <a-pane-group v-if="isGroup" />
   <div
     v-else
-    class="h-full bg-gray-900 border-2 border-gray-800 rounded-md min-h-[120px] flex flex-col transition-all duration-200"
+    class="h-full w-full bg-black border-2 border-slate-800 rounded-md min-h-[120px] flex flex-col transition-all duration-200"
   >
-    <div class="flex items-center justify-between bg-gray-700 rounded-t-lg">
+    <div class="flex items-center justify-between">
       <div class="flex items-center gap-2 px-2">
-        <div class="w-4 h-4 rounded-full bg-blue-500" />
-        <span class="text-sm font-medium text-white capitalize h-4" v-text="`Pane ${pane?.id}`" />
+        <div class="w-3 h-3 rounded-full" :class="focused ? 'bg-blue-500' : 'bg-blue-800'" />
+        <span class="text-sm font-medium text-white capitalize" v-text="`Pane ${pane?.id ?? ''}`" />
       </div>
 
-      <div class="flex items-center gap-1 p-1">
+      <div class="flex items-center gap-1 p-2">
         <button
-          class="flex items-center bg-gray-700 p-1 hover:bg-gray-600 transition-colors rounded-md text-white font-semibold cursor-pointer"
+          class="flex items-center gap-1 p-1 transition-colors rounded-md text-white font-semibold cursor-pointer hover:text-blue-500 text-md"
+          :title="'Split this pane horizontaly'"
+          tabindex="-1"
           @click="splitIntoGroup('horizontal')"
         >
           <i class="fa fa-arrows-left-right" />
-          <small class="ml-1" v-text="'Split horizontally'" />
+          <small v-text="'Split horizontally'" />
         </button>
 
         <button
-          class="flex items-center bg-gray-700 p-1 hover:bg-gray-600 transition-colors rounded-md text-white font-semibold cursor-pointer"
+          class="flex items-center gap-1 p-1 transition-colors rounded-md text-white font-semibold cursor-pointer hover:text-blue-500 text-md"
+          :title="'Split this pane verticaly'"
+          tabindex="-1"
           @click="splitIntoGroup('vertical')"
         >
           <i class="fa fa-arrows-up-down" />
-          <small class="ml-1" v-text="'Split vertically'" />
+          <small v-text="'Split vertically'" />
         </button>
       </div>
     </div>
 
-    <textarea v-model="paneCommand" class="flex-1 p-3 focus:outline-none rounded-t-lg" />
+    <textarea
+      v-model="paneCommand"
+      style="resize: none"
+      class="block w-full h-full px-4 py-2 focus:outline-none rounded-b-lg"
+      :placeholder="'Enter command...'"
+      @focusin="focused = true"
+      @focusout="focused = false"
+    />
   </div>
 </template>
 
@@ -40,14 +51,15 @@ export default {
   props: {
     pane: {
       type: Object,
-      default: () => {
-        return { id: 0, children: [], direction: null }
-      }
+      default: () => {}
     }
   },
 
   data() {
-    return { paneCommand: '' }
+    return {
+      focused: false,
+      paneCommand: ''
+    }
   },
 
   computed: {

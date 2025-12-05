@@ -2,13 +2,13 @@
   <div class="flex flex-col h-screen bg-gray-100 dark:bg-slate-900 text-black dark:text-white">
     <div class="flex items-center justify-between p-3 w-full dark:bg-slate-800">
       <h1 class="flex items-center gap-1 w-full">
-        <b>Tmux Builder</b>|<small>Build & export your new TMUX layout</small>
+        <b>Tmux Builder</b>|<span>Build & export your new TMUX layout</span>
       </h1>
 
       <div class="flex items-center gap-2">
         <button
           class="flex items-center bg-green-700 gap-2 py-1 px-3 hover:bg-green-800 transition-colors rounded-md text-white font-semibold cursor-pointer"
-          @click="splitIntoGroup('vertical')"
+          @click="''"
         >
           <i class="fa fa-arrows-up-down" />
           <small v-text="'Export'" />

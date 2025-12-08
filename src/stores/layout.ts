@@ -13,25 +13,31 @@ export const layout = defineStore('layout', {
       includeTmuxInstalledCheck: false,
       commands: [],
       panes: {}
-    }
+    },
+
+    nextPaneId: 0,
+    paneCommands: [],
+    structure: {},
+    steps: []
   }),
 
   getters: {
-    layout(): Object {
-      return this.currentLayout
-    },
     refreshToken(): Number {
       return this.refreshTokenVal
     },
     panes(): Object {
       return this.currentLayout?.panes ?? []
-    },
-    commandList(): Object {
-      return this.currentLayout?.commands ?? []
     }
   },
 
   actions: {
+    updatePaneCommand(paneId, command = '') {
+      if (paneId) {
+        this.paneCommands[paneId] = command ?? ''
+      }
+    },
+
+    // OLD
     updateCurrentLayoutProp(key, value) {
       this.currentLayout[key] = value
       this.saveConfigurationToStore()
@@ -95,11 +101,6 @@ export const layout = defineStore('layout', {
       } else {
         method(pane)
       }
-    },
-
-    updatePaneCommand(paneId, command) {
-      this.currentLayout.commands[paneId] = command
-      this.saveConfigurationToStore()
     },
 
     refresh() {

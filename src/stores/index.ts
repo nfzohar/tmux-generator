@@ -6,6 +6,6 @@ export default {
 
     app.config.globalProperties.$layout = layoutStore
 
-    layoutStore.initializeStateFromStorage()
+    //layoutStore.initializeStateFromStorage()
   }
 }

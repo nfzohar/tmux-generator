@@ -7,7 +7,7 @@
     <div class="flex items-center justify-between">
       <div class="flex items-center gap-2 px-2">
         <div class="w-3 h-3 rounded-full" :class="isFocused ? 'bg-blue-500' : 'bg-blue-800'" />
-        <span class="text-sm font-medium capitalize" v-text="`Pane ${pane?.id ?? ''}`" />
+        <span class="text-sm font-medium capitalize" v-text="`Pane ${paneId ?? ''}`" />
       </div>
 
       <div class="flex items-center gap-1 p-2">
@@ -15,7 +15,7 @@
           class="flex items-center gap-1 p-1 transition-colors rounded-md font-semibold cursor-pointer hover:text-blue-500 text-md"
           :title="'Split this pane horizontaly'"
           tabindex="-1"
-          @click="splitIntoGroup('horizontal')"
+          @click="splitPane('horizontal')"
         >
           <i class="fa fa-arrows-left-right" />
           <small v-show="!isSmallPane" v-text="'Split horizontally'" />
@@ -25,7 +25,7 @@
           class="flex items-center gap-1 p-1 transition-colors rounded-md font-semibold cursor-pointer hover:text-blue-500 text-md"
           :title="'Split this pane verticaly'"
           tabindex="-1"
-          @click="splitIntoGroup('vertical')"
+          @click="splitPane('vertical')"
         >
           <i class="fa fa-arrows-up-down" />
           <small v-show="!isSmallPane" v-text="'Split vertically'" />
@@ -79,7 +79,7 @@ export default {
   },
 
   computed: {
-    isPaneGroup() { 
+    isPaneGroup() {
       //return this.pane?.items?.length ?? false
       return this.items?.length ?? false
     },
@@ -96,7 +96,7 @@ export default {
   watch: {
     paneCommand() {
       this.$layout.updatePaneCommand(this.pane?.id, this.paneCommand)
-    },
+    }
     // currentLayoutCommands: {
     //   deep: true,
     //   handler: function () {
@@ -106,26 +106,25 @@ export default {
   },
 
   mounted() {
-    //this.paneId = this.$layout?.currentPaneId ?? 0
-    //this.paneCommand = this.$layout?.paneCommands[this.pane?.id] ?? ''
     this.checkPaneDimensions()
 
-    this.paneId = this.$layout.nextPaneId
-    this.direction = this.pane?.direction ?? ''
+    this.paneId = this.pane?.id ?? 0
     this.items = this.pane?.items ?? []
+    this.direction = this.pane?.direction ?? ''
   },
 
   methods: {
-    splitIntoGroup(direction = 'horizontal') {
-      //this.$layout.splitPane(this.paneId, direction)
+    splitPane(direction = 'horizontal') {
+      this.items = []
 
-      this.items = [
-        { id: this.paneId, direction: '', items: [] },
-        { id: this.paneId + 1, direction: '', items: [] }
-      ]
+      this.items.push({ id: this.paneId, direction: '', items: [] })
+      this.$layout.setNextPaneId()
+
+      this.items.push({ id: this.$layout.nextPaneId, direction: '', items: [] })
+      this.$layout.addStep({ paneId: this.paneId, action: `split_${direction}` })
+
       this.direction = direction
       this.paneId = null
-      this.$layout.nextPaneId++
     },
 
     checkPaneDimensions() {

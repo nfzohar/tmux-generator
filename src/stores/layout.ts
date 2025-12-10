@@ -4,118 +4,56 @@ const storeLocalStorageKey = 'stored_layout'
 
 export const layout = defineStore('layout', {
   state: () => ({
-    refreshTokenVal: 0,
-    previousLayouts: [],
-    currentLayout: {
-      name: 'New Session',
-      nextPaneId: 1,
-      enabledMouseInput: false,
-      includeTmuxInstalledCheck: false,
-      commands: [],
-      panes: {}
-    },
-
-    nextPaneId: 0,
-    paneCommands: [],
-    structure: {},
-    steps: []
+    steps: [],
+    sequenceId: 0,
+    stepCounter: 0,
+    paneCommands: []
   }),
 
   getters: {
-    refreshToken(): Number {
-      return this.refreshTokenVal
+    nextPaneId(): Number {
+      return this.sequenceId
     },
-    panes(): Object {
-      return this.currentLayout?.panes ?? []
+    scriptSteps(): Array {
+      return this.steps ?? []
+    },
+    scriptCommands(): Array {
+      return this.paneCommands ?? []
     }
   },
 
   actions: {
-    updatePaneCommand(paneId, command = '') {
+    setNextPaneId() {
+      this.sequenceId += 1
+    },
+
+    addStep(value) {
+      this.steps[this.stepCounter] = value
+      this.stepCounter += 1
+    },
+
+    updatePaneCommand(paneId: [Number, String], command = '') {
       if (paneId) {
         this.paneCommands[paneId] = command ?? ''
       }
     },
 
-    // OLD
-    updateCurrentLayoutProp(key, value) {
-      this.currentLayout[key] = value
-      this.saveConfigurationToStore()
+    resetLayout() {
+      this.steps = []
+      this.sequenceId = 0
+      this.stepCounter = 0
+      this.paneCommands = []
     },
 
-    resetCurrentLayout() {
-      this.currentLayout = {
-        name: 'New Session',
-        nextPaneId: 1,
-        enabledMouseInput: false,
-        includeTmuxInstalledCheck: false,
-        commands: [],
-        panes: { id: 0, items: [], direction: null }
-      }
-      this.saveConfigurationToStore()
-    },
-
-    loadOldIntoCurrentLayout(oldLayoutId) {
-      let temp = this.previousLayouts.filter((layout) => layout?.id != oldLayoutId).pop()
-      this.previousLayouts = temp
-      this.saveConfigurationToStore()
-    },
-
-    deleteOldLayout(oldLayoutId) {
-      this.currentLayout = this.previousLayouts.filter((layout) => layout?.id == oldLayoutId).pop()
-      this.saveConfigurationToStore()
-    },
-
-    saveCurrentLayoutToOldLayouts() {
-      let layoutTemp = this.currentLayout
-
-      layoutTemp['id'] = Math.floor(Math.random() * 99)
-
-      this.previousLayouts = [layoutTemp, ...this.previousLayouts]
-      this.saveConfigurationToStore()
-    },
-
-    splitPane(paneId, direction) {
-      this.traversePanes(this.currentLayout?.panes, (pane) => {
-        console.log(pane)
-
-        if (pane?.id == paneId) {
-          pane['items'] = [
-            { id: paneId, direction: '', items: [] },
-            { id: paneId + 1, direction: '', items: [] }
-          ]
-          pane['direction'] = direction
-          pane['id'] = null
-        }
-      })
-
-      this.refresh()
-      this.saveConfigurationToStore()
-    },
-
-    traversePanes(pane, method = () => {}) {
-      if (pane?.items?.length) {
-        pane?.items.forEach((childPane) => {
-          this.traversePanes(childPane, method)
-        })
-      } else {
-        method(pane)
-      }
-    },
-
-    refresh() {
-      this.refreshTokenVal = this.refreshTokenVal + 1
-    },
-
-    saveConfigurationToStore() {
-      localStorage.setItem(
-        storeLocalStorageKey,
-        JSON.stringify({
-          old_layouts: this.previousLayouts,
-          current_layout: this.currentLayout
-        })
-      )
-    },
+    // saveConfigurationToStore() {
+    //   localStorage.setItem(
+    //     storeLocalStorageKey,
+    //     JSON.stringify({
+    //       old_layouts: this.previousLayouts,
+    //       current_layout: this.currentLayout
+    //     })
+    //   )
+    // },
 
     initializeStateFromStorage() {
       let configurationFromStore = localStorage.getItem(storeLocalStorageKey)
@@ -127,7 +65,7 @@ export const layout = defineStore('layout', {
         this.currentLayout = configurationFromStore?.current_layout
       }
 
-      this.saveConfigurationToStore()
+      //this.saveConfigurationToStore()
     },
 
     deleteStoredConfiguration() {

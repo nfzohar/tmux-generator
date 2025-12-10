@@ -1,75 +1,110 @@
 <template>
+  <button
+    class="flex items-center bg-green-700 gap-2 py-1 px-3 hover:bg-green-800 transition-colors rounded-md font-semibold cursor-pointer"
+    @click.prevent="toggleVisible"
+  >
+    <i class="fa fa-arrows-up-down" />
+    <small v-text="'Export'" />
+  </button>
+
   <div
     v-if="show"
-    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-    @click="$emit('close')"
+    class="fixed inset-0 bg-black/30 flex items-center justify-center z-50"
+    @click.prevent="toggleVisible"
   >
-    <div
-      class="bg-white dark:bg-slate-800 rounded-lg p-6 w-full max-w-2xl max-h-[80vh] overflow-y-auto"
-      @click.stop
-    >
-      <div class="flex items-center justify-between mb-4">
-        <h3 class="text-lg font-semibold text-slate-900 dark:text-white">
-          Export tmux Configuration
-        </h3>
-        <button
-          @click="$emit('close')"
-          class="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
-        >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M6 18L18 6M6 6l12 12"
-            />
-          </svg>
-        </button>
-      </div>
+    <div class="bg-white dark:bg-gray-900 rounded-lg p-6 w-full mx-64 h-[80vh]" @click.stop>
+      <div class="flex items-start gap-5 w-full h-full">
+        <div class="flex flex-col gap-3 w-[20%]">
+          <h3
+            class="text-lg text-center font-semibold text-gray-900 dark:text-white"
+            v-text="'Export TMUX Configuration'"
+          />
 
-      <div class="space-y-4">
-        <div class="flex gap-2">
+          <div class="flex flex-col gap-5 bg-gray-800 rounded-md p-3 my-1">
+            <input-wrapper :label="'Session Name'" :name="'session-name'">
+              <input
+                v-model="sessionName"
+                id="session-name"
+                type="text"
+                class="block w-full p-2 rounded-md shadow-sm focus:outline-none focus:ring-0 bg-slate-700"
+                :placeholder="generatedSessionName"
+              />
+            </input-wrapper>
+
+            <input-wrapper
+              :label="`Add 'Is TMUX installed' check`"
+              :label-position="'bottom'"
+              :name="'tmux-installed-check'"
+              :title="`Check if tmux is installed on your system and install it if missing.`"
+              type="checkbox"
+            >
+              <input
+                id="tmux-installed-check"
+                v-model="tmuxInstalledCheck"
+                type="checkbox"
+                class="rounded border-slate-600"
+              />
+            </input-wrapper>
+
+            <input-wrapper
+              :label="'Enable mouse controls'"
+              :label-position="'bottom'"
+              :name="'mouse-enabled'"
+              :title="`Enable managing the layout with mouse input.`"
+              type="checkbox"
+            >
+              <input
+                id="mouse-enabled"
+                v-model="mouseInputEnabled"
+                type="checkbox"
+                class="rounded border-slate-600"
+              />
+            </input-wrapper>
+
+            <input-wrapper
+              :label="'Show comments'"
+              :label-position="'bottom'"
+              :name="'show-comments'"
+              :title="`Toggle comments for script commands.`"
+              type="checkbox"
+            >
+              <input
+                id="show-comments"
+                v-model="showComments"
+                type="checkbox"
+                class="rounded border-slate-600"
+              />
+            </input-wrapper>
+          </div>
+
           <button
-            v-for="format in exportFormats"
-            :key="format.id"
-            @click="selectedExportFormat = format.id"
-            :class="[
-              'px-3 py-2 text-sm rounded-md transition-colors',
-              selectedExportFormat === format.id
-                ? 'bg-blue-600 text-white'
-                : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'
-            ]"
+            class="bg-green-700 gap-2 p-2 hover:bg-green-800 transition-colors rounded-md font-semibold cursor-pointer text-center"
+            @click="copyToClipboard(generatedScript)"
           >
-            {{ format.name }}
+            <i class="fa fa-download pr-2" />
+            <small v-text="'Download'" />
           </button>
         </div>
 
         <div
-          class="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-4"
+          class="bg-gray-50 dark:bg-black border border-gray-200 dark:border-gray-700 overflow-hidden rounded-lg p-4 h-full w-[80%]"
         >
-          <div class="flex items-center justify-between mb-2">
-            <span class="text-sm font-medium text-slate-700 dark:text-slate-300"
-              >Generated Script</span
-            >
+          <div class="flex items-center justify-between">
+            <span class="font-medium" v-text="'Generated Script'" />
+
             <button
+              class="flex items-center bg-gray-700 gap-2 p-2 hover:bg-blue-800 transition-colors rounded-md font-semibold cursor-pointer"
               @click="copyToClipboard(generatedScript)"
-              class="flex items-center gap-1 px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
             >
-              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-                />
-              </svg>
-              Copy
+              <i class="fa fa-copy" />
+              <small v-text="'Copy'" />
             </button>
           </div>
+
           <pre
-            class="text-xs font-mono text-slate-800 dark:text-slate-200 whitespace-pre-wrap overflow-x-auto"
-            >{{ generatedScript }}</pre
-          >
+            class="block text-xs font-mono whitespace-pre-wrap overflow-scroll scrollbar-hide h-full pt-1 mt-4"
+            v-text="generatedScript"
+          />
         </div>
       </div>
     </div>
@@ -77,123 +112,110 @@
 </template>
 
 <script>
+import InputWrapper from './InputWrapper.vue'
+import blocks from '../assets/codeBlocks'
+
 export default {
   name: 'ExportDialog',
-  props: {
-    show: {
-      type: Boolean,
-      default: false
-    },
-    sessionName: {
-      type: String,
-      default: 'my-session'
-    },
-    mouseEnabled: {
-      type: Boolean,
-      default: false
-    },
-    panes: {
-      type: Array,
-      default: () => []
-    }
-  },
+
+  components: { InputWrapper },
+
   data() {
     return {
-      selectedExportFormat: 'bash',
-      exportFormats: [
-        { id: 'bash', name: 'Bash Script' },
-        { id: 'commands', name: 'Manual Commands' },
-        { id: 'json', name: 'JSON Config' }
-      ]
+      show: true,
+      sessionName: '',
+      showComments: true,
+      mouseInputEnabled: true,
+      tmuxInstalledCheck: true
     }
   },
+
   computed: {
     generatedScript() {
-      if (this.selectedExportFormat === 'bash') {
-        return this.generateBashScript()
-      } else if (this.selectedExportFormat === 'commands') {
-        return this.generateManualCommands()
-      } else {
-        return this.generateJsonConfig()
-      }
+      return this.generateTmuxScript()
+    },
+    scriptSteps() {
+      return this.$layout.scriptSteps ?? []
+    },
+    scriptCommands() {
+      return this.$layout.scriptCommands ?? []
+    },
+    generatedSessionName() {
+      return `session_${Math.random().toString().slice(2)}`
+    },
+    tmuxSessionName() {
+      return this.sessionName ? this.sessionName.replaceAll(' ', '_') : this.generatedSessionName
     }
   },
+
   methods: {
-    generateBashScript() {
-      let script = '#!/bin/bash\n\n'
-      script += `# tmux session: ${this.sessionName}\n\n`
+    generateTmuxScript() {
+      let content = ['#!/bin/bash']
 
-      if (this.mouseEnabled) {
-        script += 'tmux set -g mouse on\n'
+      content.push(`SESSION_NAME="${this.generatedSessionName}"`)
+
+      if (this.tmuxInstalledCheck) {
+        content.push(this.getCodeBlock('is_tmux_installed_check'))
       }
 
-      script += `tmux new-session -d -s "${this.sessionName}"\n\n`
+      content.push(this.getCodeBlock('name_session'))
 
-      if (this.panes.length > 0) {
-        const firstPane = this.panes[0]
-        if (firstPane.command) {
-          script += `tmux send-keys -t "${this.sessionName}:0.0" "${firstPane.command}" Enter\n`
-        }
+      // add pane splitting
+      if (this.scriptSteps?.length) {
+        content.push('# === SPLIT PANES ===')
 
-        for (let i = 1; i < this.panes.length; i++) {
-          const pane = this.panes[i]
-          const splitDirection = pane.splitDirection === 'vertical' ? '-v' : '-h'
-          script += `tmux split-window ${splitDirection} -t "${this.sessionName}:0"\n`
-          if (pane.command) {
-            script += `tmux send-keys -t "${this.sessionName}:0.${i}" "${pane.command}" Enter\n`
-          }
-        }
+        this.scriptSteps.forEach((step) => {
+          content.push(this.stepAction(step))
+        })
       }
 
-      script += `\ntmux attach-session -t "${this.sessionName}"\n`
-      return script
+      // add command pushing for panes
+      if (this.scriptCommands?.length) {
+        content.push('# === SEND COMMANDS ===')
+      }
+
+      if (this.mouseInputEnabled) {
+        content.push(this.getCodeBlock('enable_mouse_controls'))
+      }
+
+      content.push(this.getCodeBlock('attach_session'))
+
+      return content.join('\n\n')
     },
-    generateManualCommands() {
-      let commands = `# Manual tmux commands for session: ${this.sessionName}\n\n`
 
-      if (this.mouseEnabled) {
-        commands += 'tmux set -g mouse on\n'
+    getCodeBlock(block) {
+      return this.showComments
+        ? `# ${blocks[block].comment}\n${blocks[block].code}`
+        : blocks[block].code
+    },
+
+    stepAction(step) {
+      const paneSelector = `tmux select-pane -t ${step?.paneId}`
+      let comment = ''
+      let command = ''
+
+      if (step?.action == 'split_horizontal') {
+        comment = `# Split pane ${step?.paneId} horizontally`
+        command = 'tmux split-window -h'
+      }
+      if (step?.action == 'split_vertical') {
+        comment = `# Split pane ${step?.paneId} vertically`
+        command = 'tmux split-window -v'
       }
 
-      commands += `tmux new-session -d -s "${this.sessionName}"\n`
-
-      if (this.panes.length > 0) {
-        const firstPane = this.panes[0]
-        if (firstPane.command) {
-          commands += `tmux send-keys -t "${this.sessionName}:0.0" "${firstPane.command}" Enter\n`
-        }
-
-        for (let i = 1; i < this.panes.length; i++) {
-          const pane = this.panes[i]
-          const splitDirection = pane.splitDirection === 'vertical' ? '-v' : '-h'
-          commands += `tmux split-window ${splitDirection} -t "${this.sessionName}:0"\n`
-          if (pane.command) {
-            commands += `tmux send-keys -t "${this.sessionName}:0.${i}" "${pane.command}" Enter\n`
-          }
-        }
-      }
-
-      commands += `tmux attach-session -t "${this.sessionName}"\n`
-      return commands
+      return `${comment}\n${paneSelector}\n${command}`
     },
-    generateJsonConfig() {
-      return JSON.stringify(
-        {
-          sessionName: this.sessionName,
-          mouseEnabled: this.mouseEnabled,
-          panes: this.panes
-        },
-        null,
-        2
-      )
-    },
+
     async copyToClipboard(text) {
       try {
         await navigator.clipboard.writeText(text)
-        // You could add a toast notification here
       } catch (err) {
-        console.error('Failed to copy text: ', err)
+        console.error('Failed to copy tmux script: ', err)
       }
+    },
+
+    toggleVisible() {
+      this.show = !this.show
     }
   }
 }

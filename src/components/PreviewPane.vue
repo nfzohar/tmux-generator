@@ -74,7 +74,8 @@ export default {
       direction: '',
       paneCommand: '',
       isFocused: false,
-      isSmallPane: false
+      isSmallPane: false,
+      timeout: null
     }
   },
 
@@ -95,14 +96,11 @@ export default {
 
   watch: {
     paneCommand() {
-      this.$layout.updatePaneCommand(this.pane?.id, this.paneCommand)
+      clearTimeout(this.timeout)
+      this.timeout = setTimeout(() => {
+        this.$layout.updatePaneCommand(this.paneId, this.paneCommand)
+      }, 500)
     }
-    // currentLayoutCommands: {
-    //   deep: true,
-    //   handler: function () {
-    //     this.paneCommand = this.currentLayoutCommands[this.pane?.id]
-    //   }
-    // }
   },
 
   mounted() {

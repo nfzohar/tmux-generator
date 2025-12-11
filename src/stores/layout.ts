@@ -7,7 +7,8 @@ export const layout = defineStore('layout', {
     steps: [],
     sequenceId: 0,
     stepCounter: 0,
-    paneCommands: []
+    paneCommands: [],
+    history: []
   }),
 
   getters: {
@@ -24,18 +25,20 @@ export const layout = defineStore('layout', {
 
   actions: {
     setNextPaneId() {
-      this.sequenceId += 1
+      this.sequenceId++
     },
 
     addStep(value) {
       this.steps[this.stepCounter] = value
-      this.stepCounter += 1
+      this.stepCounter++
+
+      this.updatePaneCommand(value?.paneId, `echo Pane_${value?.paneId}`)
+
+      console.log(this.steps)
     },
 
-    updatePaneCommand(paneId: [Number, String], command = '') {
-      if (paneId) {
-        this.paneCommands[paneId] = command ?? ''
-      }
+    updatePaneCommand(paneId: [Number, String], paneCommand = '') {
+      this.paneCommands[paneId] = paneCommand ?? null
     },
 
     resetLayout() {

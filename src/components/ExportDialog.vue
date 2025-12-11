@@ -79,7 +79,7 @@
 
           <button
             class="bg-green-700 gap-2 p-2 hover:bg-green-800 transition-colors rounded-md font-semibold cursor-pointer text-center"
-            @click="copyToClipboard(generatedScript)"
+            @click="downloadScriptAsAFile()"
           >
             <i class="fa fa-download pr-2" />
             <small v-text="'Download'" />
@@ -94,7 +94,7 @@
 
             <button
               class="flex items-center bg-gray-700 gap-2 p-2 hover:bg-blue-800 transition-colors rounded-md font-semibold cursor-pointer"
-              @click="copyToClipboard(generatedScript)"
+              @click="copyScriptToClipboard()"
             >
               <i class="fa fa-copy" />
               <small v-text="'Copy'" />
@@ -160,18 +160,22 @@ export default {
 
       content.push(this.getCodeBlock('name_session'))
 
-      // add pane splitting
       if (this.scriptSteps?.length) {
         content.push('# === SPLIT PANES ===')
 
         this.scriptSteps.forEach((step) => {
-          content.push(this.stepAction(step))
+          content.push(this.setStepAction(step))
         })
       }
 
-      // add command pushing for panes
       if (this.scriptCommands?.length) {
         content.push('# === SEND COMMANDS ===')
+
+        let paneIdSequence = 0
+        this.scriptCommands.forEach((command) => {
+          content.push(this.setPaneCommand(paneIdSequence, command))
+          paneIdSequence++
+        })
       }
 
       if (this.mouseInputEnabled) {
@@ -189,26 +193,52 @@ export default {
         : blocks[block].code
     },
 
-    stepAction(step) {
-      const paneSelector = `tmux select-pane -t ${step?.paneId}`
-      let comment = ''
-      let command = ''
-
-      if (step?.action == 'split_horizontal') {
-        comment = `# Split pane ${step?.paneId} horizontally`
-        command = 'tmux split-window -h'
-      }
-      if (step?.action == 'split_vertical') {
-        comment = `# Split pane ${step?.paneId} vertically`
-        command = 'tmux split-window -v'
+    setStepAction(step) {
+      const actions = {
+        split_horizontal: {
+          comment: `# Split pane ${step?.paneId} horizontally`,
+          command: 'tmux split-window -h'
+        },
+        split_vertical: {
+          comment: `# Split pane ${step?.paneId} vertically`,
+          command: 'tmux split-window -v'
+        }
       }
 
-      return `${comment}\n${paneSelector}\n${command}`
+      let paneSelector = `tmux select-pane -t ${step?.paneId}`
+      let comment = actions[step?.action].comment
+      let command = actions[step?.action].command
+
+      return this.showComments
+        ? `${comment}\n${paneSelector}\n${command}`
+        : `${paneSelector}\n${command}`
     },
 
-    async copyToClipboard(text) {
+    setPaneCommand(paneIdSequence, paneCommand) {
+      const paneSelector = `tmux select-pane -t ${paneIdSequence}`
+      let comment = `# Set command for Pane ${paneIdSequence}`
+      let command = `tmux send-keys "${paneCommand}" C-m`
+
+      return this.showComments
+        ? `${comment}\n${paneSelector}\n${command}`
+        : `${paneSelector}\n${command}`
+    },
+
+    downloadScriptAsAFile() {
+      const blob = new Blob([this.generatedScript], { type: 'text/x-shellscript' })
+      const a = document.createElement('a')
+      let url = URL.createObjectURL(blob)
+      
+      a.download = `${this.tmuxSessionName}.sh`
+      a.href = url
+      a.click()
+
+      URL.revokeObjectURL(url)
+    },
+
+    async copyScriptToClipboard() {
       try {
-        await navigator.clipboard.writeText(text)
+        await navigator.clipboard.writeText(this.generatedScript)
       } catch (err) {
         console.error('Failed to copy tmux script: ', err)
       }

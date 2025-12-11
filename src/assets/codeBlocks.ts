@@ -9,7 +9,7 @@ export default {
   },
   is_tmux_installed_check: {
     comment: 'Install tmux if missing (ubuntu)',
-    code: 'command -v tmux >/dev/null 2>&1 || sudo apt update && sudo apt install -y tmux'
+    code: 'command -v tmux >/dev/null 2>&1 || { sudo apt update && sudo apt install -y tmux; }'
   },
   enable_mouse_controls: {
     comment: 'Enable mouse support',

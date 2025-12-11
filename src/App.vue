@@ -28,6 +28,9 @@
 import PreviewPane from './components/PreviewPane.vue'
 import ExportDialog from './components/ExportDialog.vue'
 
+// To do: add sidebar customization
+// To do: add multi-window support
+
 export default {
   name: 'TmuxLayoutBuilder',
 

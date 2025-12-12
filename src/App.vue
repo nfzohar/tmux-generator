@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col h-screen bg-gray-100 dark:bg-slate-900 text-black dark:text-white">
+  <div class="flex flex-col h-screen bg-gray-100 dark:bg-slate-900 gap-5 text-black dark:text-white">
     <div class="flex flex-row gap-2 items-center justify-between p-3 w-full dark:bg-slate-800">
       <h1 class="block w-full font-base">
         <strong>Tmux Builder</strong> | <small>Build & export your new TMUX layout</small>
@@ -18,23 +18,26 @@
     </div>
 
     <hr class="border w-full px-1 dark:hidden" />
-    <div class="flex justify-evenly gap-1 rounded-lg h-full p-5 overflow-scroll scrollbar-hide">
+
+    <div class="flex justify-evenly gap-1 rounded-lg h-full overflow-scroll scrollbar-hide px-2">
       <preview-pane />
     </div>
+
+    <status-bar />
   </div>
 </template>
 
 <script>
+import StatusBar from './components/StatusBar.vue'
 import PreviewPane from './components/PreviewPane.vue'
 import ExportDialog from './components/ExportDialog.vue'
 
-// To do: add sidebar customization
-// To do: add multi-window support
+// TO DO: add sidebar customization, add multi-window support
 
 export default {
   name: 'TmuxLayoutBuilder',
 
-  components: { PreviewPane, ExportDialog },
+  components: { StatusBar, PreviewPane, ExportDialog },
 
   computed: {
     sessionName() {

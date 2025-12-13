@@ -125,8 +125,11 @@ export default {
       show: false,
       sessionName: '',
       showComments: true,
-      mouseInputEnabled: true,
-      tmuxInstalledCheck: true
+      mouseInputEnabled: false,
+      tmuxInstalledCheck: false,
+
+      _paneVarMap: {},
+      _nextShellPaneId: 1
     }
   },
 
@@ -152,6 +155,9 @@ export default {
     generateTmuxScript() {
       let content = ['#!/bin/bash']
 
+      this._paneVarMap = {}
+      this._nextShellPaneId = 1
+
       content.push(`SESSION_NAME="${this.generatedSessionName}"`)
 
       if (this.tmuxInstalledCheck) {
@@ -159,6 +165,9 @@ export default {
       }
 
       content.push(this.getCodeBlock('name_session'))
+
+      content.push(`ROOT=$(tmux display -p '#{pane_id}')`)
+      this._paneVarMap[0] = 'ROOT'
 
       if (this.scriptSteps?.length) {
         content.push('# === SPLIT PANES ===')
@@ -171,10 +180,8 @@ export default {
       if (this.scriptCommands?.length) {
         content.push('# === SEND COMMANDS ===')
 
-        let paneIdSequence = 0
-        this.scriptCommands.forEach((command) => {
-          content.push(this.setPaneCommand(paneIdSequence, command))
-          paneIdSequence++
+        this.scriptCommands.forEach((command, paneId) => {
+          content.push(this.setPaneCommand(paneId, command))
         })
       }
 
@@ -193,42 +200,43 @@ export default {
         : blocks[block].code
     },
 
-    setStepAction(step) {
-      const actions = {
-        split_horizontal: {
-          comment: `# Split pane ${step?.paneId} horizontally`,
-          command: 'tmux split-window -h'
-        },
-        split_vertical: {
-          comment: `# Split pane ${step?.paneId} vertically`,
-          command: 'tmux split-window -v'
-        }
+    getPaneVar(paneId) {
+      if (!this._paneVarMap[paneId]) {
+        this._paneVarMap[paneId] = `PANE_${this._nextShellPaneId++}`
       }
 
-      let paneSelector = `tmux select-pane -t ${step?.paneId}`
-      let comment = actions[step?.action].comment
-      let command = actions[step?.action].command
-
-      return this.showComments
-        ? `${comment}\n${paneSelector}\n${command}`
-        : `${paneSelector}\n${command}`
+      return this._paneVarMap[paneId]
     },
 
-    setPaneCommand(paneIdSequence, paneCommand) {
-      const paneSelector = `tmux select-pane -t ${paneIdSequence}`
-      let comment = `# Set command for Pane ${paneIdSequence}`
-      let command = `tmux send-keys "${paneCommand}" C-m`
+    setStepAction(step) {
+      const fromVar = this.getPaneVar(step.paneId)
+      const toVar = this.getPaneVar(this._nextShellPaneId)
+
+      const splitFlag = step.action === 'split_horizontal' ? '-h' : '-v'
+
+      const comment = `# Split pane ${step.paneId} ${splitFlag === '-h' ? 'horizontally' : 'vertically'}`
 
       return this.showComments
-        ? `${comment}\n${paneSelector}\n${command}`
-        : `${paneSelector}\n${command}`
+        ? `${comment}\ntmux split-window ${splitFlag} -t "$${fromVar}" -P -F '#{pane_id}' > /tmp/tmux_pane\n${toVar}=$(cat /tmp/tmux_pane)`
+        : `tmux split-window ${splitFlag} -t "$${fromVar}" -P -F '#{pane_id}' > /tmp/tmux_pane\n${toVar}=$(cat /tmp/tmux_pane)`
+    },
+
+    setPaneCommand(paneId, paneCommand) {
+      const paneVar = this.getPaneVar(paneId)
+      const comment = `# Set command for pane ${paneId}`
+
+      return this.showComments
+        ? `${comment}\ntmux send-keys -t "$${paneVar}" "${paneCommand}" C-m`
+        : `tmux send-keys -t "$${paneVar}" "${paneCommand}" C-m`
     },
 
     downloadScriptAsAFile() {
-      const blob = new Blob([this.generatedScript], { type: 'text/x-shellscript' })
+      const blob = new Blob([this.generatedScript], {
+        type: 'text/x-shellscript'
+      })
       const a = document.createElement('a')
-      let url = URL.createObjectURL(blob)
-      
+      const url = URL.createObjectURL(blob)
+
       a.download = `${this.tmuxSessionName}.sh`
       a.href = url
       a.click()
@@ -240,7 +248,7 @@ export default {
       try {
         await navigator.clipboard.writeText(this.generatedScript)
       } catch (err) {
-        console.error('Failed to copy tmux script: ', err)
+        console.error('Failed to copy tmux script:', err)
       }
     },
 

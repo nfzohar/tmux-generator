@@ -11,6 +11,10 @@ export default {
     comment: 'Install tmux if missing (ubuntu)',
     code: 'command -v tmux >/dev/null 2>&1 || { sudo apt update && sudo apt install -y tmux; }'
   },
+  set_root: {
+    comment: 'Enable mouse support',
+    code: 'tmux set -g mouse on'
+  },
   enable_mouse_controls: {
     comment: 'Enable mouse support',
     code: 'tmux set -g mouse on'

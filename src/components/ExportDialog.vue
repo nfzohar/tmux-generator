@@ -166,7 +166,7 @@ export default {
 
       content.push(this.getCodeBlock('name_session'))
 
-      content.push(`ROOT=$(tmux display -p '#{pane_id}')`)
+      content.push(this.getCodeBlock('set_root'))
       this._paneVarMap[0] = 'ROOT'
 
       if (this.scriptSteps?.length) {

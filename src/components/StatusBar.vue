@@ -1,25 +1,53 @@
 <template>
-  <div class="flex flex-row gap-2 items-center justify-between p-3 w-full dark:bg-slate-800">
+  <div
+    class="flex flex-row gap-2 items-center justify-between px-3 py-2 w-full text-sm dark:bg-slate-800"
+  >
     <div class="flex items-center gap-2">
       <button
-        v-for="(window, w) in windows"
-        class="flex items-center gap-2 py-1 px-2 bg-gray-700 hover:bg-blue-800 transition-colors rounded-md cursor-pointer"
-        :key="w"
-        v-text="window"
-      />
-      <button
-        class="flex items-center gap-2 p-2 bg-green-700 hover:bg-green-800 transition-colors rounded-md cursor-pointer"
+        class="flex items-center gap-2 p-2 bg-gray-700 hover:bg-blue-800 transition-colors rounded-md cursor-pointer"
+        :title="'Add new window'"
         @click="addNewWindow()"
       >
         <i class="fa fa-plus" />
       </button>
+
+      <button
+        v-for="(window, w) in windows"
+        class="flex items-center gap-2 py-1 px-2 bg-green-700 hover:bg-green-800 transition-colors rounded-md cursor-pointer font-semibold"
+        :key="w"
+        v-text="window"
+      />
+    </div>
+
+    <div class="flex items-center gap-2">
+      <div class="flex items-center gap-2 mx-2">
+        <div class="flex items-center gap-1" :title="'Select status bar foreground color'">
+          <label :for="'foreground_color_select'" v-text="'FG'" />
+          <input
+            v-model="foregroundColor"
+            class="w-5 h-5 rounded-xs"
+            :name="'foreground_color_select'"
+            type="color"
+          />
+        </div>
+        <div class="flex items-center gap-1" :title="'Select status bar background color'">
+          <label :for="'background_color_select'" v-text="'BG'" />
+          <input
+            v-model="backgroundColor"
+            class="w-5 h-5 rounded-xs"
+            :name="'background_color_select'"
+            type="color"
+          />
+        </div>
+      </div>
+
+      <span v-text="timestamp" />
     </div>
   </div>
 </template>
 
 <script>
-// https://medium.com/hackernoon/customizing-tmux-b3d2a5050207
-// https://www.baeldung.com/linux/tmux-status-bar-customization
+import format from 'date-fns/format'
 
 export default {
   name: 'StatusBar',
@@ -27,23 +55,40 @@ export default {
   props: {
     pane: {
       type: Object,
-      default: () => {
-        return { id: 0, direction: '', items: [] }
-      }
+      required: false,
+      default: () => {}
     }
   },
 
   data() {
     return {
       sequence: 1,
-      windows: ['Window 0']
+      windows: ['Window'],
+      timestamp: '',
+      timer: null,
+
+      foregroundColor: 'black',
+      backgroundColor: 'green'
     }
+  },
+
+  mounted() {
+    this.updateTime()
+    this.timer = setInterval(this.updateTime, 1000)
+  },
+
+  beforeUnmount() {
+    clearInterval(this.timer)
   },
 
   methods: {
     addNewWindow() {
-      this.windows.push(`Window ${this.sequence}`)
+      this.windows.push(`Window`)
       this.sequence++
+    },
+
+    updateTime() {
+      this.timestamp = format(new Date(), 'HH:mm dd-MMM-yy')
     }
   }
 }

@@ -19,8 +19,6 @@
       </div>
     </div>
 
-    <hr class="border w-full px-1 dark:hidden" />
-
     <div class="flex justify-evenly gap-1 rounded-lg h-full overflow-scroll scrollbar-hide px-2">
       <preview-pane :pane="rootPane" />
     </div>

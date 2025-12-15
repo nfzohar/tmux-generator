@@ -72,6 +72,15 @@ export default {
     }
   },
 
+  watch: {
+    foregroundColor() {
+      this.$layout.foregroundColor = this.foregroundColor
+    },
+    backgroundColor() {
+      this.$layout.backgroundColor = this.backgroundColor
+    }
+  },
+
   mounted() {
     this.updateTime()
     this.timer = setInterval(this.updateTime, 1000)

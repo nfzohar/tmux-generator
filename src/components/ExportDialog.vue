@@ -134,6 +134,9 @@ export default {
   },
 
   computed: {
+    statusBarColors() {
+      return this.$layout.colors
+    },
     generatedScript() {
       return this.generateTmuxScript()
     },
@@ -188,6 +191,12 @@ export default {
       if (this.mouseInputEnabled) {
         content.push(this.getCodeBlock('enable_mouse_controls'))
       }
+
+      content.push(
+        this.getCodeBlock('status_bar_colors')
+          .replace('fgColor', this.statusBarColors?.txt)
+          .replace('bgColor', this.statusBarColors?.bg)
+      )
 
       content.push(this.getCodeBlock('attach_session'))
 

@@ -21,19 +21,19 @@
 
     <div class="flex items-center gap-2">
       <div class="flex items-center gap-2 mx-2">
-        <div class="flex items-center gap-1" :title="'Select status bar foreground color'">
-          <label :for="'foreground_color_select'" v-text="'FG'" />
+        <div class="flex items-center gap-1" :title="'Select status bar text/foreground color'">
+          <label :for="'foreground_color_select'" v-text="'Text'" />
           <input
-            v-model="foregroundColor"
+            v-model="textColor"
             class="w-5 h-5 rounded-xs"
             :name="'foreground_color_select'"
             type="color"
           />
         </div>
         <div class="flex items-center gap-1" :title="'Select status bar background color'">
-          <label :for="'background_color_select'" v-text="'BG'" />
+          <label :for="'background_color_select'" v-text="'Background'" />
           <input
-            v-model="backgroundColor"
+            v-model="bgColor"
             class="w-5 h-5 rounded-xs"
             :name="'background_color_select'"
             type="color"
@@ -65,23 +65,25 @@ export default {
       sequence: 1,
       windows: ['Window'],
       timestamp: '',
-      timer: null,
-
-      foregroundColor: 'black',
-      backgroundColor: 'green'
+      textColor: '',
+      bgColor: '',
+      timer: null
     }
   },
 
   watch: {
-    foregroundColor() {
-      this.$layout.foregroundColor = this.foregroundColor
+    textColor() {
+      this.$layout.colors['txt'] = this.textColor
     },
     backgroundColor() {
-      this.$layout.backgroundColor = this.backgroundColor
+      this.$layout.colors['bg'] = this.bgColor
     }
   },
 
   mounted() {
+    this.textColor = this.$layout.colors['txt']
+    this.bgColor = this.$layout.colors['bg']
+
     this.updateTime()
     this.timer = setInterval(this.updateTime, 1000)
   },

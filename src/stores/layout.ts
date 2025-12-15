@@ -10,8 +10,10 @@ export const layout = defineStore('layout', {
     paneCommands: [],
     tmuxTree: {},
 
-    foregroundColor: 'black',
-    backgroundColor: 'green'
+    colors: {
+      txt: '#000000',
+      bg: '#00ff00'
+    }
   }),
 
   getters: {

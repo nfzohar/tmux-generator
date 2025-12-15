@@ -18,5 +18,9 @@ export default {
   enable_mouse_controls: {
     comment: 'Enable mouse support',
     code: 'tmux set -g mouse on'
+  },
+  status_bar_colors: {
+    comment: 'Set status bar colors',
+    code: 'tmux set-option -g status-style fg="fgColor",bg="bgColor"'
   }
 }

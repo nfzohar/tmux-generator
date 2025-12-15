@@ -75,14 +75,14 @@ export default {
     textColor() {
       this.$layout.colors['txt'] = this.textColor
     },
-    backgroundColor() {
+    bgColor() {
       this.$layout.colors['bg'] = this.bgColor
     }
   },
 
   mounted() {
-    this.textColor = this.$layout.colors['txt']
-    this.bgColor = this.$layout.colors['bg']
+    this.textColor = this.$layout.colors.txt
+    this.bgColor = this.$layout.colors.bg
 
     this.updateTime()
     this.timer = setInterval(this.updateTime, 1000)

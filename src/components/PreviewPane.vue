@@ -61,36 +61,40 @@ export default {
   props: {
     pane: {
       type: Object,
-      default: () => {
-        return { id: 0, direction: '', items: [] }
-      }
+      required: false,
+      default: () => {}
     }
   },
 
   data() {
     return {
-      paneId: 0,
-      items: [],
-      direction: '',
-      paneCommand: '',
-      isFocused: false,
+      currentPane: {
+        id: 0,
+        items: [],
+        command: '',
+        direction: ''
+      },
+
+      // paneId: 0,
+      // items: [],
+      // direction: '',
+      // paneCommand: '',
+
       isSmallPane: false,
+      isFocused: false,
       timeout: null
     }
   },
 
   computed: {
     isPaneGroup() {
-      //return this.pane?.items?.length ?? false
-      return this.items?.length ?? false
+      return this.currentPane?.items?.length ?? false
     },
     paneGroupDirection() {
-      //return this.pane?.direction ?? 'horizontal'
-      return this.direction ?? 'horizontal'
+      return this.currentPane?.direction ?? 'horizontal'
     },
     paneGroupChildren() {
-      // return this.pane?.items?.length ? this.pane?.items : []
-      return this.items ?? []
+      return this.currentPane?.items ?? []
     }
   },
 
@@ -98,7 +102,7 @@ export default {
     paneCommand() {
       clearTimeout(this.timeout)
       this.timeout = setTimeout(() => {
-        this.$layout.updatePaneCommand(this.paneId, this.paneCommand)
+        this.$layout.updatePaneCommand(this.currentPane?.id, this.currentPane?.command)
       }, 500)
     }
   },
@@ -106,23 +110,36 @@ export default {
   mounted() {
     this.checkPaneDimensions()
 
-    this.paneId = this.pane?.id ?? 0
-    this.items = this.pane?.items ?? []
-    this.direction = this.pane?.direction ?? ''
+    this.currentPane.Id = this.pane?.id ?? 0
+    this.currentPane.items = this.pane?.items ?? []
+    this.currentPane.command = this.pane?.command ?? ''
+    this.currentPane.direction = this.pane?.direction ?? ''
   },
 
   methods: {
     splitPane(direction = 'horizontal') {
-      this.items = []
+      this.currentPane.items = []
 
-      this.items.push({ id: this.paneId, direction: '', items: [] })
+      this.currentPane.items.push({
+        id: this.currentPane?.id,
+        direction: '',
+        items: []
+      })
       this.$layout.setNextPaneId()
 
-      this.items.push({ id: this.$layout.nextPaneId, direction: '', items: [] })
-      this.$layout.addStep({ paneId: this.paneId, action: `split_${direction}` })
+      this.currentPane.items.push({
+        id: this.$layout.nextPaneId,
+        direction: '',
+        items: []
+      })
 
-      this.direction = direction
-      this.paneId = null
+      this.$layout.addStep({
+        paneId: this.currentPane?.id,
+        action: `split_${this.currentPane?.direction}`
+      })
+
+      this.currentPane.direction = direction
+      this.currentPane.paneId = null
     },
 
     checkPaneDimensions() {
@@ -130,7 +147,7 @@ export default {
 
       if (el) {
         const width = el.offsetWidth
-        this.isSmallPane = width < 300
+        this.isSmallPane = width < 400
       }
     }
   }

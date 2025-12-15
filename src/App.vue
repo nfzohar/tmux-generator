@@ -1,5 +1,7 @@
 <template>
-  <div class="flex flex-col h-screen bg-gray-100 dark:bg-slate-900 gap-5 text-black dark:text-white">
+  <div
+    class="flex flex-col h-screen bg-gray-100 dark:bg-slate-900 gap-5 text-black dark:text-white"
+  >
     <div class="flex flex-row gap-2 items-center justify-between p-3 w-full dark:bg-slate-800">
       <h1 class="block w-full font-base">
         <strong>Tmux Builder</strong> | <small>Build & export your new TMUX layout</small>
@@ -20,7 +22,7 @@
     <hr class="border w-full px-1 dark:hidden" />
 
     <div class="flex justify-evenly gap-1 rounded-lg h-full overflow-scroll scrollbar-hide px-2">
-      <preview-pane />
+      <preview-pane :pane="rootPane" />
     </div>
 
     <status-bar />
@@ -39,19 +41,14 @@ export default {
 
   components: { StatusBar, PreviewPane, ExportDialog },
 
-  computed: {
-    sessionName() {
-      return this.currentLayout?.name || 'New session'
-    },
-    isGroup() {
-      return this.rootPane?.items?.length ?? false
-    },
-    currentLayout() {
-      return this.$layout.currentLayout ?? null
-    },
-    token() {
-      return this.$layout.refreshToken
+  data() {
+    return {
+      rootPane: { id: 0, direction: '', items: [] }
     }
+  },
+
+  mounted() {
+    this.$layout.tmuxTree = this.rootPane
   }
 }
 </script>

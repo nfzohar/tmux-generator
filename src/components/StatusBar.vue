@@ -26,7 +26,7 @@
           <input
             v-model="textColor"
             class="w-5 h-5 rounded-xs border-2 border-gray-700"
-            :name="'foreground_color_select'"
+            name="foreground_color_select"
             type="color"
           />
         </div>
@@ -35,13 +35,18 @@
           <input
             v-model="bgColor"
             class="w-5 h-5 rounded-xs border-2 border-gray-700"
-            :name="'background_color_select'"
+            name="background_color_select"
             type="color"
           />
         </div>
       </div>
 
-      <span v-text="timestamp" />
+      <span
+        class="py-1 px-2 rounded-md border border-gray-800"
+        :class="`bg-[${storedBgColor}] text-[${storedTextColor}]`"
+        :title="'Status bar custom color preview'"
+        v-text="timestamp"
+      />
     </div>
   </div>
 </template>
@@ -71,18 +76,37 @@ export default {
     }
   },
 
+  computed: {
+    storedBgColor() {
+      return this.$layout.colors.bg
+    },
+    storedTextColor() {
+      return this.$layout.colors.txt
+    }
+  },
+
   watch: {
     textColor() {
       this.$layout.colors['txt'] = this.textColor
     },
     bgColor() {
       this.$layout.colors['bg'] = this.bgColor
+    },
+    storedTextColor() {
+      if (this.textColor != this.storedTextColor) {
+        this.textColor = this.storedTextColor
+      }
+    },
+    storedBgColor() {
+      if (this.bgColor != this.storedBgColor) {
+        this.bgColor = this.storedBgColor
+      }
     }
   },
 
   mounted() {
-    this.textColor = this.$layout.colors.txt
-    this.bgColor = this.$layout.colors.bg
+    this.bgColor = this.storedBgColor
+    this.textColor = this.storedTextColor
 
     this.updateTime()
     this.timer = setInterval(this.updateTime, 1000)

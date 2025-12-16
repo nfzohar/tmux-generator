@@ -25,7 +25,7 @@
           <label :for="'foreground_color_select'" v-text="'Text'" />
           <input
             v-model="textColor"
-            class="w-5 h-5 rounded-xs"
+            class="w-5 h-5 rounded-xs border-2 border-gray-700"
             :name="'foreground_color_select'"
             type="color"
           />
@@ -34,7 +34,7 @@
           <label :for="'background_color_select'" v-text="'Background'" />
           <input
             v-model="bgColor"
-            class="w-5 h-5 rounded-xs"
+            class="w-5 h-5 rounded-xs border-2 border-gray-700"
             :name="'background_color_select'"
             type="color"
           />

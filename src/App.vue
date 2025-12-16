@@ -1,6 +1,6 @@
 <template>
   <div
-    class="flex flex-col h-screen bg-gray-100 dark:bg-slate-900 gap-5 text-black dark:text-white"
+    class="flex flex-col h-screen bg-gray-100 dark:bg-slate-900 gap-3 text-black dark:text-white"
   >
     <div class="flex flex-row gap-2 items-center justify-between p-3 w-full dark:bg-slate-800">
       <h1 class="block w-full font-base">
@@ -16,11 +16,20 @@
           <i class="fa fa-undo" />
         </button>
 
+        <button
+          class="flex items-center bg-gray-700 gap-2 py-1 px-3 hover:bg-blue-800 transition-colors rounded-md font-semibold cursor-pointer"
+          :title="'Do full reset'"
+          @click.prevent="reset"
+        >
+          <i class="fa fa-trash" />
+          <small v-text="'Reset'" />
+        </button>
+
         <export-dialog />
       </div>
     </div>
 
-    <div class="flex justify-evenly gap-1 rounded-lg h-full overflow-scroll scrollbar-hide px-2">
+    <div class="flex justify-evenly gap-1 rounded-lg h-full overflow-scroll scrollbar-hide px-3">
       <preview-pane :pane="rootPane" />
     </div>
 
@@ -33,7 +42,7 @@ import StatusBar from './components/StatusBar.vue'
 import PreviewPane from './components/PreviewPane.vue'
 import ExportDialog from './components/ExportDialog.vue'
 
-// TO DO: add sidebar customization, add multi-window support
+// TO DO: add multi-window support
 
 export default {
   name: 'TmuxLayoutBuilder',
@@ -41,11 +50,32 @@ export default {
   components: { StatusBar, PreviewPane, ExportDialog },
 
   data() {
-    return { rootPane: null }
+    return {
+      rootPane: {
+        id: 0,
+        items: [],
+        command: '',
+        direction: ''
+      }
+    }
   },
 
   mounted() {
     this.rootPane = this.$layout.rootPane
+  },
+
+  methods: {
+    reset() {
+      if (confirm('Are you sure?')) {
+        this.$layout.resetBuilder()
+        this.rootPane = {
+          id: 0,
+          items: [],
+          command: '',
+          direction: ''
+        }
+      }
+    }
   }
 }
 </script>

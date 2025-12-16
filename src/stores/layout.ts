@@ -4,13 +4,8 @@ const storeLocalStorageKey = 'stored_layout'
 
 export const layout = defineStore('layout', {
   state: () => ({
-    steps: [],
-    sequenceId: 0,
-    stepCounter: 0,
-    paneCommands: [],
-
     nextPaneId: 1,
-    rootPane: { 
+    rootPane: {
       id: 0,
       items: [],
       command: '',
@@ -22,30 +17,25 @@ export const layout = defineStore('layout', {
     }
   }),
 
-  getters: {
-    scriptSteps(): Array {
-      return this.steps ?? []
-    },
-    scriptCommands(): Array {
-      return this.paneCommands ?? []
-    }
-  },
-
   actions: {
     setNextPaneId() {
       this.nextPaneId += 1
     },
 
-    updatePane(updatedPane) {
-      const paneId = updatedPane?.id
+    updatePane(freshPane) {
+      const freshPaneId = freshPane?.id
 
-      this.traverseTree(this.rootPane, (pane) => {
-        if (pane?.id == paneId) {
-          pane.items = updatedPane?.items
-          pane.command = updatedPane?.command
-          pane.direction = updatedPane?.direction
+      let paneTree = this.rootPane
+
+      this.traverseTree(paneTree, (pane) => {
+        if (pane?.id == freshPaneId) {
+          pane.items = freshPane?.items
+          pane.command = freshPane?.command
+          pane.direction = freshPane?.direction
         }
       })
+
+      this.rootPane = paneTree
     },
 
     traverseTree(pane, method = () => {}) {
@@ -59,16 +49,14 @@ export const layout = defineStore('layout', {
       })
     },
 
-    addStep(value) {
-      this.steps[this.stepCounter] = value
-      this.stepCounter++
-    },
-
-    resetLayout() {
-      this.steps = []
-      this.sequenceId = 0
-      this.stepCounter = 0
-      this.paneCommands = []
+    resetBuilder() {
+      this.nextPaneId = 1
+      this.rootPane.id = 0
+      this.rootPane.items = []
+      this.rootPane.command = ''
+      this.rootPane.direction = ''
+      this.colors.txt = '#000000'
+      this.colors.bg = '#26A269'
     },
 
     // saveConfigurationToStore() {

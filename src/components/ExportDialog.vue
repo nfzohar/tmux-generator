@@ -1,9 +1,10 @@
 <template>
   <button
     class="flex items-center bg-green-700 gap-2 py-1 px-3 hover:bg-green-800 transition-colors rounded-md font-semibold cursor-pointer"
+    :title="'Export layout as program'"
     @click.prevent="toggleVisible"
   >
-    <i class="fa fa-arrows-up-down" />
+    <i class="fa fa-file" />
     <small v-text="'Export'" />
   </button>
 

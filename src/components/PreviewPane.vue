@@ -7,7 +7,7 @@
     <div class="flex items-center justify-between">
       <div class="flex items-center gap-2 px-2">
         <div class="w-3 h-3 rounded-full" :class="isFocused ? 'bg-blue-500' : 'bg-blue-800'" />
-        <span class="text-sm font-medium capitalize" v-text="`Pane ${paneId ?? ''}`" />
+        <span class="text-sm font-medium capitalize" v-text="`Pane ${currentPane?.id ?? ''}`" />
       </div>
 
       <div class="flex items-center gap-1 p-2">
@@ -30,16 +30,24 @@
           <i class="fa fa-arrows-up-down" />
           <small v-show="!isSmallPane" v-text="'Split vertically'" />
         </button>
+
+        <button
+          class="flex items-center gap-1 p-1 transition-colors rounded-md font-semibold cursor-pointer hover:text-blue-500 text-md"
+          :title="'More actions'"
+          tabindex="-1"
+          @click="splitPane('vertical')"
+        >
+          <i class="fa fa-ellipsis" />
+        </button>
       </div>
     </div>
 
     <textarea
-      v-model="paneCommand"
-      style="resize: none"
-      class="block w-full h-full px-4 py-2 focus:outline-none rounded-b-lg border-t dark:border-none"
+      v-model="currentPane.command"
+      class="block w-full h-full px-4 py-2 focus:outline-none rounded-b-lg border-t dark:border-none resize-none"
       :placeholder="'Enter command...'"
-      @focusin="isFocused = true"
       @focusout="isFocused = false"
+      @focusin="isFocused = true"
     />
   </div>
 
@@ -48,9 +56,7 @@
     class="flex gap-2 w-full h-full"
     :class="`flex-${paneGroupDirection == 'vertical' ? 'col' : 'row'}`"
   >
-    <template v-for="(child, i) in paneGroupChildren" :key="i">
-      <preview-pane :pane="child" />
-    </template>
+    <preview-pane v-for="(child, i) in paneGroupChildren" :key="i" :pane="child" />
   </div>
 </template>
 
@@ -61,7 +67,7 @@ export default {
   props: {
     pane: {
       type: Object,
-      required: false,
+      required: true,
       default: () => {
         return { id: 0, items: [], command: '', direction: '' }
       }
@@ -96,8 +102,8 @@ export default {
 
   watch: {
     currentPane: {
-      immediate: true,
       deep: true,
+      immediate: true,
       handler: function () {
         clearTimeout(this.timeout)
         this.timeout = setTimeout(() => {
@@ -113,25 +119,27 @@ export default {
   },
 
   methods: {
-    splitPane(direction = 'horizontal') {
-      this.currentPane.items = []
+    splitPane(direction) {
+      this.currentPane.items = [
+        {
+          id: this.currentPane?.id,
+          direction: '',
+          command: this.currentPane?.command || '',
+          items: []
+        },
+        {
+          id: this.$layout.nextPaneId,
+          direction: '',
+          command: '',
+          items: []
+        }
+      ]
 
-      this.currentPane.items.push({
-        id: this.currentPane?.id,
-        direction: '',
-        items: []
-      })
-
-      this.$layout.setNextPaneId()
-
-      this.currentPane.items.push({
-        id: this.$layout.nextPaneId,
-        direction: '',
-        items: []
-      })
-
-      this.currentPane.direction = direction
       this.currentPane.id = null
+      this.currentPane.direction = direction
+
+      //this.$layout.updatePane(this.currentPane)
+      this.$layout.setNextPaneId()
     },
 
     checkPaneDimensions() {

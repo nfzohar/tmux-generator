@@ -10,7 +10,8 @@
       <div class="flex items-center gap-2 text-white">
         <button
           class="flex items-center gap-2 py-1 px-2 bg-gray-700 hover:bg-blue-800 transition-colors rounded-md font-semibold cursor-pointer"
-          @click="'undolast'"
+          :title="'Undo last change'"
+          @click="() => alert('Undo')"
         >
           <i class="fa fa-undo" />
         </button>
@@ -40,13 +41,11 @@ export default {
   components: { StatusBar, PreviewPane, ExportDialog },
 
   data() {
-    return {
-      rootPane: { id: 0, direction: '', items: [] }
-    }
+    return { rootPane: null }
   },
 
   mounted() {
-    this.$layout.tmuxTree = this.rootPane
+    this.rootPane = this.$layout.rootPane
   }
 }
 </script>

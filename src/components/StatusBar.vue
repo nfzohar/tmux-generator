@@ -21,7 +21,7 @@
 
     <div class="flex items-center gap-2">
       <div class="flex items-center gap-2 mx-2">
-        <div class="flex items-center gap-1" :title="'Select status bar text/foreground color'">
+        <div class="flex items-center gap-1" :title="'Select status bar foreground color'">
           <label :for="'foreground_color_select'" v-text="'Text'" />
           <input
             v-model="textColor"

@@ -8,18 +8,21 @@ export const layout = defineStore('layout', {
     sequenceId: 0,
     stepCounter: 0,
     paneCommands: [],
-    tmuxTree: {},
 
+    nextPaneId: 1,
+    rootPane: { 
+      id: 0,
+      items: [],
+      command: '',
+      direction: ''
+    },
     colors: {
       txt: '#000000',
-      bg: '#00ff00'
+      bg: '#26A269'
     }
   }),
 
   getters: {
-    nextPaneId(): Number {
-      return this.sequenceId
-    },
     scriptSteps(): Array {
       return this.steps ?? []
     },
@@ -30,20 +33,35 @@ export const layout = defineStore('layout', {
 
   actions: {
     setNextPaneId() {
-      this.sequenceId++
+      this.nextPaneId += 1
+    },
+
+    updatePane(updatedPane) {
+      const paneId = updatedPane?.id
+
+      this.traverseTree(this.rootPane, (pane) => {
+        if (pane?.id == paneId) {
+          pane.items = updatedPane?.items
+          pane.command = updatedPane?.command
+          pane.direction = updatedPane?.direction
+        }
+      })
+    },
+
+    traverseTree(pane, method = () => {}) {
+      if (!pane?.items?.length) {
+        method(pane)
+        return
+      }
+
+      pane?.items.forEach((childPane) => {
+        this.traverseTree(childPane, method)
+      })
     },
 
     addStep(value) {
       this.steps[this.stepCounter] = value
       this.stepCounter++
-
-      this.updatePaneCommand(value?.paneId, `echo Pane_${value?.paneId}`)
-
-      console.log(this.steps)
-    },
-
-    updatePaneCommand(paneId: [Number, String], paneCommand = '') {
-      this.paneCommands[paneId] = paneCommand ?? null
     },
 
     resetLayout() {

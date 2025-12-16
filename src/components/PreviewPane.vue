@@ -62,27 +62,23 @@ export default {
     pane: {
       type: Object,
       required: false,
-      default: () => {}
+      default: () => {
+        return { id: 0, items: [], command: '', direction: '' }
+      }
     }
   },
 
   data() {
     return {
+      isSmallPane: false,
+      isFocused: false,
+      timeout: null,
       currentPane: {
         id: 0,
         items: [],
         command: '',
         direction: ''
-      },
-
-      // paneId: 0,
-      // items: [],
-      // direction: '',
-      // paneCommand: '',
-
-      isSmallPane: false,
-      isFocused: false,
-      timeout: null
+      }
     }
   },
 
@@ -99,21 +95,21 @@ export default {
   },
 
   watch: {
-    paneCommand() {
-      clearTimeout(this.timeout)
-      this.timeout = setTimeout(() => {
-        this.$layout.updatePaneCommand(this.currentPane?.id, this.currentPane?.command)
-      }, 500)
+    currentPane: {
+      immediate: true,
+      deep: true,
+      handler: function () {
+        clearTimeout(this.timeout)
+        this.timeout = setTimeout(() => {
+          this.$layout.updatePane(this.currentPane)
+        }, 500)
+      }
     }
   },
 
   mounted() {
     this.checkPaneDimensions()
-
-    this.currentPane.Id = this.pane?.id ?? 0
-    this.currentPane.items = this.pane?.items ?? []
-    this.currentPane.command = this.pane?.command ?? ''
-    this.currentPane.direction = this.pane?.direction ?? ''
+    this.currentPane = this.pane
   },
 
   methods: {
@@ -125,6 +121,7 @@ export default {
         direction: '',
         items: []
       })
+
       this.$layout.setNextPaneId()
 
       this.currentPane.items.push({
@@ -133,13 +130,8 @@ export default {
         items: []
       })
 
-      this.$layout.addStep({
-        paneId: this.currentPane?.id,
-        action: `split_${this.currentPane?.direction}`
-      })
-
       this.currentPane.direction = direction
-      this.currentPane.paneId = null
+      this.currentPane.id = null
     },
 
     checkPaneDimensions() {

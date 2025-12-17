@@ -3,6 +3,7 @@
     v-if="!isPaneGroup"
     class="h-full w-full bg-white dark:bg-black border-2 border-gray-300 dark:border-slate-800 rounded-md min-h-[120px] flex flex-col transition-all duration-200"
     ref="pane-body"
+    @contextmenu.prevent="openContextMenu"
   >
     <div class="flex items-center justify-between">
       <div class="flex items-center gap-2 px-2">
@@ -15,7 +16,7 @@
           class="flex items-center gap-1 p-1 transition-colors rounded-md font-semibold cursor-pointer hover:text-blue-500 text-md"
           :title="'Split this pane horizontaly'"
           tabindex="-1"
-          @click="splitIntoPanes('horizontal', 2)"
+          @click="splitIntoPanes('horizontal')"
         >
           <i class="fa fa-arrows-left-right" />
           <small v-show="!isSmallPane" v-text="'Split horizontally'" />
@@ -25,16 +26,11 @@
           class="flex items-center gap-1 p-1 transition-colors rounded-md font-semibold cursor-pointer hover:text-blue-500 text-md"
           :title="'Split this pane verticaly'"
           tabindex="-1"
-          @click="splitIntoPanes('vertical', 2)"
+          @click="splitIntoPanes('vertical')"
         >
           <i class="fa fa-arrows-up-down" />
           <small v-show="!isSmallPane" v-text="'Split vertically'" />
         </button>
-
-        <pane-actions
-          @split-3-horizontal="splitIntoPanes('horizontal', 3)"
-          @split-3-vertical="splitIntoPanes('vertical', 3)"
-        />
       </div>
     </div>
 
@@ -45,24 +41,26 @@
       @focusout="isFocused = false"
       @focusin="isFocused = true"
     />
+
+    <context-menu ref="menu" @split="splitIntoPanes" @close="onMenuClose" />
   </div>
 
   <div
     v-else
     class="flex gap-2 w-full h-full"
-    :class="`flex-${paneGroupDirection == 'vertical' ? 'col' : 'row'}`"
+    :class="paneGroupDirection == 'vertical' ? 'flex-col' : 'flex-row'"
   >
     <preview-pane v-for="(child, i) in paneGroupChildren" :key="i" :pane="child" />
   </div>
 </template>
 
 <script>
-import PaneActions from './PaneActions.vue'
+import ContextMenu from './ContextMenu.vue'
 
 export default {
   name: 'PreviewPane',
 
-  components: { PaneActions },
+  components: { ContextMenu },
 
   props: {
     pane: {
@@ -151,6 +149,10 @@ export default {
         const width = el.offsetWidth
         this.isSmallPane = width < 400
       }
+    },
+
+    openContextMenu(e) {
+      this.$refs.menu.open(e)
     }
   }
 }

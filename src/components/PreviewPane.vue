@@ -42,7 +42,14 @@
       @focusin="isFocused = true"
     />
 
-    <context-menu ref="menu" @split="splitIntoPanes" @close="onMenuClose" />
+    <context-menu
+      :ref="'menu'"
+      :items="actions"
+      @split-vertically="splitIntoPanes('vertical')"
+      @split-horizontaly="splitIntoPanes('horizontal')"
+      @split-vertically-3-panes="splitIntoPanes('vertical', 3)"
+      @split-horizontaly-3-panes="splitIntoPanes('horizontal', 3)"
+    />
   </div>
 
   <div
@@ -74,6 +81,12 @@ export default {
 
   data() {
     return {
+      actions: [
+        'Split vertically',
+        'Split horizontaly',
+        'Split vertically (3 panes)',
+        'Split horizontaly (3 panes)'
+      ],
       isSmallPane: false,
       isFocused: false,
       timeout: null,

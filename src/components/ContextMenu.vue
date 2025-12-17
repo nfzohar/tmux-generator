@@ -7,12 +7,14 @@
       :style="{ left: `${pos.x}px`, top: `${pos.y}px` }"
       @click.stop
     >
-      <ul class="menu flex flex-col rounded-md shadow-xl overflow-hidden">
-        <li class="context-menu-item" @click="emit('split', 'horizontal')">Split Horizontally</li>
-
-        <li class="context-menu-item" @click="emit('split', 'vertical')">Split Vertically</li>
-
-        <li class="context-menu-item" @click="emit('close')">Close Pane</li>
+      <ul class="menu flex flex-col rounded-md shadow-xl overflow-hidden border border-gray-700">
+        <template v-for="item in items" :key="item">
+          <li
+            class="cursor-pointer bg-white dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-800/50 p-4 text-sm"
+            v-text="item"
+            @click="emit(item)"
+          />
+        </template>
       </ul>
     </div>
   </Teleport>
@@ -20,13 +22,18 @@
 
 <script>
 export default {
-  name: 'PaneContextMenu',
+  name: 'ContextMenu',
 
-  emits: ['split', 'close'],
+  props: {
+    items: {
+      type: [Array, Object],
+      required: false,
+      default: () => []
+    }
+  },
 
   data() {
     return {
-      pane: null,
       visible: false,
       pos: { x: 0, y: 0 }
     }
@@ -70,19 +77,21 @@ export default {
 
     hide() {
       this.visible = false
-      this.pane = null
     },
 
-    emit(type, payload) {
-      this.$emit(type, { pane: this.pane, payload })
+    emit(value) {
+      this.$emit(this.emitify(value))
       this.hide()
+    },
+
+    emitify(value) {
+      return value
+        .replace(/[()]/g, '')
+        .replace(/\s+/g, ' ')
+        .split(' ')
+        .map((w) => `${w.charAt(0).toUpperCase()}${w.slice(1)}`)
+        .join('')
     }
   }
 }
 </script>
-
-<style scoped>
-.context-menu-item {
-  @apply cursor-pointer bg-white dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-800/50 p-4 text-sm;
-}
-</style>

@@ -81,12 +81,6 @@ export default {
 
   data() {
     return {
-      actions: [
-        'Split vertically',
-        'Split horizontaly',
-        'Split vertically (3 panes)',
-        'Split horizontaly (3 panes)'
-      ],
       isSmallPane: false,
       isFocused: false,
       timeout: null,
@@ -95,7 +89,13 @@ export default {
         items: [],
         command: '',
         direction: ''
-      }
+      },
+      actions: [
+        'Split vertically',
+        'Split horizontaly',
+        'Split vertically (3 panes)',
+        'Split horizontaly (3 panes)'
+      ]
     }
   },
 

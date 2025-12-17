@@ -29,7 +29,10 @@
       </div>
     </div>
 
-    <div class="flex justify-evenly gap-1 rounded-lg h-full overflow-scroll scrollbar-hide px-3">
+    <div
+      class="flex justify-evenly gap-1 rounded-lg h-full overflow-scroll scrollbar-hide px-3"
+      :key="refreshToken"
+    >
       <preview-pane :pane="rootPane" />
     </div>
 
@@ -51,6 +54,7 @@ export default {
 
   data() {
     return {
+      refreshToken: 0,
       rootPane: {
         id: 0,
         items: [],
@@ -74,6 +78,7 @@ export default {
           command: '',
           direction: ''
         }
+        this.refreshToken++
       }
     }
   }

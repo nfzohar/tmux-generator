@@ -56,7 +56,10 @@ export default {
 
       this.$nextTick(() => {
         const menu = this.$refs.menu
-        if (!menu) return
+
+        if (!menu) {
+          return
+        }
 
         const { offsetWidth, offsetHeight } = menu
 
@@ -66,11 +69,9 @@ export default {
         if (x + offsetWidth > window.innerWidth) {
           x = window.innerWidth - offsetWidth
         }
-
         if (y + offsetHeight > window.innerHeight) {
           y = window.innerHeight - offsetHeight
         }
-
         this.pos = { x, y }
       })
     },

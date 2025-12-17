@@ -1,7 +1,5 @@
 import { defineStore } from 'pinia'
 
-const storeLocalStorageKey = 'stored_layout'
-
 export const layout = defineStore('layout', {
   state: () => ({
     nextPaneId: 1,
@@ -25,28 +23,29 @@ export const layout = defineStore('layout', {
     updatePane(freshPane) {
       const freshPaneId = freshPane?.id
 
-      let paneTree = this.rootPane
+      if (freshPaneId === 0) {
+        // Replace rootPane completely
+        this.rootPane = freshPane
+        return
+      }
 
-      this.traverseTree(paneTree, (pane) => {
-        if (pane?.id == freshPaneId) {
-          pane.items = freshPane?.items
+      this.traverseTree(this.rootPane, (pane) => {
+        if (pane?.id === freshPaneId) {
+          pane.items = freshPane.items
           pane.command = freshPane?.command
           pane.direction = freshPane?.direction
         }
       })
-
-      this.rootPane = paneTree
     },
 
     traverseTree(pane, method = () => {}) {
-      if (!pane?.items?.length) {
-        method(pane)
-        return
-      }
+      if (!pane) return
 
-      pane?.items.forEach((childPane) => {
-        this.traverseTree(childPane, method)
-      })
+      method(pane)
+
+      if (pane.items?.length) {
+        pane.items.forEach((child) => this.traverseTree(child, method))
+      }
     },
 
     resetBuilder() {
@@ -57,33 +56,6 @@ export const layout = defineStore('layout', {
       this.rootPane.direction = ''
       this.colors.txt = '#000000'
       this.colors.bg = '#26A269'
-    },
-
-    // saveConfigurationToStore() {
-    //   localStorage.setItem(
-    //     storeLocalStorageKey,
-    //     JSON.stringify({
-    //       old_layouts: this.previousLayouts,
-    //       current_layout: this.currentLayout
-    //     })
-    //   )
-    // },
-
-    initializeStateFromStorage() {
-      let configurationFromStore = localStorage.getItem(storeLocalStorageKey)
-
-      if (configurationFromStore) {
-        configurationFromStore = JSON.parse(configurationFromStore)
-
-        this.previousLayouts = configurationFromStore?.old_layouts ?? []
-        this.currentLayout = configurationFromStore?.current_layout
-      }
-
-      //this.saveConfigurationToStore()
-    },
-
-    deleteStoredConfiguration() {
-      localStorage.removeItem(storeLocalStorageKey)
     }
   }
 })

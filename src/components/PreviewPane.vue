@@ -7,7 +7,10 @@
   >
     <div class="flex items-center justify-between">
       <div class="flex items-center gap-2 px-2">
-        <div class="w-3 h-3 rounded-full" :class="isFocused ? 'bg-blue-500' : 'bg-blue-800'" />
+        <div
+          class="w-3 h-3 rounded-full"
+          :class="isFocused ? `bg-[${backgroundColorHex}]` : 'bg-gray-500'"
+        />
         <span class="text-sm font-medium capitalize" v-text="`Pane ${currentPane?.id ?? ''}`" />
       </div>
 
@@ -100,21 +103,23 @@ export default {
   },
 
   computed: {
-    isPaneGroup() {
-      return this.currentPane?.items?.length ?? false
-    },
     paneGroupDirection() {
       return this.currentPane?.direction ?? 'horizontal'
     },
+    isPaneGroup() {
+      return this.currentPane?.items?.length ?? false
+    },
     paneGroupChildren() {
       return this.currentPane?.items ?? []
+    },
+    backgroundColorHex() {
+      return this.$layout?.colors?.bg
     }
   },
 
   watch: {
     currentPane: {
       deep: true,
-      immediate: true,
       handler: function () {
         clearTimeout(this.timeout)
         this.timeout = setTimeout(() => {
@@ -150,9 +155,14 @@ export default {
         this.$layout.setNextPaneId()
       }
 
-      this.currentPane.id = null
-      this.currentPane.items = items
-      this.currentPane.direction = direction
+      this.currentPane = {
+        id: null,
+        items: items,
+        direction: direction,
+        command: ''
+      }
+
+      this.$layout.updatePane(this.currentPane)
     },
 
     checkPaneDimensions() {

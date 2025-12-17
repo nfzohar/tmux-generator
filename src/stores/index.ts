@@ -5,7 +5,5 @@ export default {
     const layoutStore = layout()
 
     app.config.globalProperties.$layout = layoutStore
-
-    //layoutStore.initializeStateFromStorage()
   }
 }

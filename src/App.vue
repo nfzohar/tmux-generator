@@ -21,7 +21,7 @@
           :title="'Do full reset'"
           @click.prevent="reset"
         >
-          <i class="fa fa-trash" />
+          <i class="fa fa-delete-left" />
           <small v-text="'Reset'" />
         </button>
 

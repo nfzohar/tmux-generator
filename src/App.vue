@@ -14,6 +14,7 @@
           @click="() => alert('Undo')"
         >
           <i class="fa fa-undo" />
+          <small v-text="'Undo'" />
         </button>
 
         <button

@@ -23,39 +23,49 @@ export const layout = defineStore('layout', {
     updatePane(freshPane) {
       const freshPaneId = freshPane?.id
 
-      if (freshPaneId === 0) {
-        // Replace rootPane completely
-        this.rootPane = freshPane
-        return
-      }
+      this.rootPane = this.traverseTree(this.rootPane, (pane) => {
+        if (pane?.id != freshPaneId) {
+          return pane
+        }
 
-      this.traverseTree(this.rootPane, (pane) => {
-        if (pane?.id === freshPaneId) {
-          pane.items = freshPane.items
-          pane.command = freshPane?.command
-          pane.direction = freshPane?.direction
+        return {
+          id: pane.id,
+          items: freshPane.items,
+          command: freshPane?.command,
+          direction: freshPane?.direction
         }
       })
     },
 
-    traverseTree(pane, method = () => {}) {
-      if (!pane) return
-
-      method(pane)
-
-      if (pane.items?.length) {
-        pane.items.forEach((child) => this.traverseTree(child, method))
+    traverseTree(pane, method) {
+      if (!pane) {
+        return
       }
+
+      const updatedPane = method(pane)
+
+      if (updatedPane.items?.length) {
+        return {
+          ...updatedPane,
+          items: updatedPane.items.map((child) => this.traverseTree(child, method))
+        }
+      }
+
+      return updatedPane
     },
 
     resetBuilder() {
       this.nextPaneId = 1
-      this.rootPane.id = 0
-      this.rootPane.items = []
-      this.rootPane.command = ''
-      this.rootPane.direction = ''
-      this.colors.txt = '#000000'
-      this.colors.bg = '#26A269'
+      this.rootPane = {
+        id: 0,
+        items: [],
+        command: '',
+        direction: ''
+      }
+      this.colors = {
+        txt: '#000000',
+        bg: '#26A269'
+      }
     }
   }
 })

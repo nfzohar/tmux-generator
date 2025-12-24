@@ -117,7 +117,7 @@ export default {
     }
   },
 
-  watch: {
+  /*watch: {
     currentPane: {
       deep: true,
       handler: function () {
@@ -127,7 +127,7 @@ export default {
         }, 500)
       }
     }
-  },
+  },*/
 
   mounted() {
     this.checkPaneDimensions()

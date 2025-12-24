@@ -71,7 +71,7 @@ export default {
 
   methods: {
     reset() {
-      if (confirm('Are you sure?')) {
+      if (confirm('Are you sure? This will delete the current layout.')) {
         this.$layout.resetBuilder()
         this.rootPane = {
           id: 0,

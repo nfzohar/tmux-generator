@@ -12,7 +12,8 @@ export const layout = defineStore('layout', {
     colors: {
       txt: '#000000',
       bg: '#26A269'
-    }
+    },
+    panes: []
   }),
 
   actions: {
@@ -35,6 +36,8 @@ export const layout = defineStore('layout', {
           direction: freshPane?.direction
         }
       })
+
+      this.panes.push(freshPane)
     },
 
     traverseTree(pane, method) {
@@ -44,14 +47,14 @@ export const layout = defineStore('layout', {
 
       const updatedPane = method(pane)
 
-      if (updatedPane.items?.length) {
-        return {
-          ...updatedPane,
-          items: updatedPane.items.map((child) => this.traverseTree(child, method))
-        }
+      if (!updatedPane.items?.length) {
+        return updatedPane
       }
 
-      return updatedPane
+      return {
+        ...updatedPane,
+        items: updatedPane.items.map((child) => this.traverseTree(child, method))
+      }
     },
 
     resetBuilder() {

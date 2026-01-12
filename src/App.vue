@@ -8,14 +8,14 @@
       </h1>
 
       <div class="flex items-center gap-2 text-white">
-        <button
+        <!-- <button
           class="flex items-center gap-2 py-1 px-2 bg-gray-700 hover:bg-blue-800 transition-colors rounded-md font-semibold cursor-pointer"
           :title="'Undo last change'"
-          @click="() => alert('Undo')"
+          @click=""
         >
           <i class="fa fa-undo" />
           <small v-text="'Undo'" />
-        </button>
+        </button> -->
 
         <button
           class="flex items-center bg-gray-700 gap-2 py-1 px-3 hover:bg-blue-800 transition-colors rounded-md font-semibold cursor-pointer"

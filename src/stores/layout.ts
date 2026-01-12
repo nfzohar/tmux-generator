@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { cloneDeep } from 'lodash'
 
 export const layout = defineStore('layout', {
   state: () => ({
@@ -12,8 +13,7 @@ export const layout = defineStore('layout', {
     colors: {
       txt: '#000000',
       bg: '#26A269'
-    },
-    panes: []
+    }
   }),
 
   actions: {
@@ -37,7 +37,7 @@ export const layout = defineStore('layout', {
         }
       })
 
-      this.panes.push(freshPane)
+      console.log(this.rootPane)
     },
 
     traverseTree(pane, method) {

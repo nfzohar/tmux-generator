@@ -3,7 +3,7 @@
     class="flex flex-row gap-2 items-center justify-between px-3 py-2 w-full text-sm dark:bg-slate-800"
   >
     <div class="flex items-center gap-2">
-      <button
+      <!-- <button
         class="flex items-center gap-2 p-2 bg-gray-700 hover:bg-blue-800 transition-colors rounded-md cursor-pointer"
         :title="'Add new window'"
         @click="addNewWindow()"
@@ -16,7 +16,7 @@
         class="flex items-center gap-2 py-1 px-2 bg-green-700 hover:bg-green-800 transition-colors rounded-md cursor-pointer font-semibold"
         :key="w"
         v-text="window"
-      />
+      /> -->
     </div>
 
     <div class="flex items-center gap-2">

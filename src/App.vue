@@ -8,14 +8,14 @@
       </h1>
 
       <div class="flex items-center gap-2 text-white">
-        <!-- <button
+        <button
           class="flex items-center gap-2 py-1 px-2 bg-gray-700 hover:bg-blue-800 transition-colors rounded-md font-semibold cursor-pointer"
           :title="'Undo last change'"
-          @click=""
+          @click="undoLastChange()"
         >
           <i class="fa fa-undo" />
           <small v-text="'Undo'" />
-        </button> -->
+        </button>
 
         <button
           class="flex items-center bg-gray-700 gap-2 py-1 px-3 hover:bg-blue-800 transition-colors rounded-md font-semibold cursor-pointer"
@@ -34,7 +34,7 @@
       class="flex justify-evenly gap-1 rounded-lg h-full overflow-scroll scrollbar-hide px-3"
       :key="refreshToken"
     >
-      <preview-pane :pane="rootPane" />
+      <preview-pane :pane="rootPane" @update-pane="(pane) => updateRootPane(pane)" />
     </div>
 
     <status-bar />
@@ -56,30 +56,36 @@ export default {
   data() {
     return {
       refreshToken: 0,
-      rootPane: {
-        id: 0,
-        items: [],
-        command: '',
-        direction: ''
-      }
+      rootPane: null,
+      history: []
     }
   },
 
-  mounted() {
+  created() {
     this.rootPane = this.$layout.rootPane
   },
 
   methods: {
+    updateRootPane(updatedRootPane) {
+      this.history.push(this.rootPane)
+      this.rootPane = updatedRootPane
+    },
+
+    undoLastChange() {
+      this.rootPane = this.history.pop()
+      this.refreshToken++
+    },
+
     reset() {
       if (confirm('Are you sure? This will delete the current layout.')) {
         this.$layout.resetBuilder()
+        this.history = []
         this.rootPane = {
           id: 0,
           items: [],
           command: '',
           direction: ''
         }
-        this.refreshToken++
       }
     }
   }

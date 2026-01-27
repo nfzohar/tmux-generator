@@ -60,7 +60,12 @@
     class="flex gap-2 w-full h-full"
     :class="paneGroupDirection == 'vertical' ? 'flex-col' : 'flex-row'"
   >
-    <preview-pane v-for="(child, i) in paneGroupChildren" :key="i" :pane="child" />
+    <preview-pane
+      v-for="(child, i) in paneGroupChildren"
+      :key="i"
+      :pane="child"
+      @update-pane="(pane) => propagatePaneUpdate(pane)"
+    />
   </div>
 </template>
 
@@ -71,6 +76,8 @@ export default {
   name: 'PreviewPane',
 
   components: { ContextMenu },
+
+  emits: ['updatePane'],
 
   props: {
     pane: {
@@ -107,7 +114,7 @@ export default {
       return this.currentPane?.direction ?? 'horizontal'
     },
     isPaneGroup() {
-      return this.currentPane?.items?.length ?? false
+      return this.currentPane?.items?.length > 0
     },
     paneGroupChildren() {
       return this.currentPane?.items ?? []
@@ -117,17 +124,17 @@ export default {
     }
   },
 
-  /*watch: {
+  watch: {
     currentPane: {
       deep: true,
       handler: function () {
         clearTimeout(this.timeout)
         this.timeout = setTimeout(() => {
-          this.$layout.updatePane(this.currentPane)
+          this.$emit('updatePane', this.currentPane)
         }, 500)
       }
     }
-  },*/
+  },
 
   mounted() {
     this.checkPaneDimensions()
@@ -136,14 +143,7 @@ export default {
 
   methods: {
     splitIntoPanes(direction, paneCount = 2) {
-      let items = [
-        {
-          id: this.currentPane?.id,
-          direction: '',
-          command: this.currentPane?.command || '',
-          items: []
-        }
-      ]
+      let items = []
 
       for (let index = 0; items?.length < paneCount; index++) {
         items.push({
@@ -156,13 +156,17 @@ export default {
       }
 
       this.currentPane = {
-        id: null,
-        items: items,
+        id: this.currentPane?.id,
         direction: direction,
-        command: ''
+        command: this.currentPane?.command || '',
+        items: items
       }
+    },
 
-      this.$layout.updatePane(this.currentPane)
+    propagatePaneUpdate(updatedPane) {
+      this.currentPane.items = this.currentPane.items.map((pane) =>
+        pane.id == updatedPane.id ? updatedPane : pane
+      )
     },
 
     checkPaneDimensions() {

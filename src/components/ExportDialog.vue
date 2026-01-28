@@ -121,6 +121,13 @@ export default {
 
   components: { InputWrapper },
 
+  props: {
+    paneTree: {
+      type: Object,
+      required: true
+    }
+  },
+
   data() {
     return {
       show: false,
@@ -129,8 +136,7 @@ export default {
       mouseInputEnabled: false,
       tmuxInstalledCheck: false,
 
-      _paneVarMap: {},
-      _nextShellPaneId: 1
+      _paneCounter: 0
     }
   },
 
@@ -138,106 +144,113 @@ export default {
     statusBarColors() {
       return this.$layout.colors
     },
-    generatedScript() {
-      return this.generateTmuxScript()
-    },
-    scriptSteps() {
-      return this.$layout.scriptSteps ?? []
-    },
-    scriptCommands() {
-      return this.$layout.scriptCommands ?? []
-    },
+
     generatedSessionName() {
       return `session_${Math.random().toString().slice(2)}`
     },
+
     tmuxSessionName() {
       return this.sessionName ? this.sessionName.replaceAll(' ', '_') : this.generatedSessionName
+    },
+
+    generatedScript() {
+      return this.generateTmuxScript()
     }
   },
 
   methods: {
     generateTmuxScript() {
-      let content = ['#!/bin/bash']
+      const lines = ['#!/bin/bash']
+      this._paneCounter = 0
 
-      this._paneVarMap = {}
-      this._nextShellPaneId = 1
-
-      content.push(`SESSION_NAME="${this.generatedSessionName}"`)
+      lines.push(`SESSION_NAME="${this.tmuxSessionName}"`)
 
       if (this.tmuxInstalledCheck) {
-        content.push(this.getCodeBlock('is_tmux_installed_check'))
+        lines.push(this.getCodeBlock('is_tmux_installed_check'))
       }
 
-      content.push(this.getCodeBlock('name_session'))
+      lines.push(`tmux new-session -d -s "$SESSION_NAME"`)
 
-      content.push(this.getCodeBlock('set_root'))
-      this._paneVarMap[0] = 'ROOT'
+      const rootPane = this.nextPaneVar()
+      lines.push(`${rootPane}=$(tmux list-panes -t "$SESSION_NAME" -F '#{pane_id}')`)
 
-      if (this.scriptSteps?.length) {
-        content.push('# === SPLIT PANES ===')
-
-        this.scriptSteps.forEach((step) => {
-          content.push(this.setStepAction(step))
-        })
-      }
-
-      if (this.scriptCommands?.length) {
-        content.push('# === SEND COMMANDS ===')
-
-        this.scriptCommands.forEach((command, paneId) => {
-          content.push(this.setPaneCommand(paneId, command))
-        })
-      }
+      this.walkTree(this.paneTree, rootPane, lines)
 
       if (this.mouseInputEnabled) {
-        content.push(this.getCodeBlock('enable_mouse_controls'))
+        lines.push(this.getCodeBlock('enable_mouse_controls'))
       }
 
-      content.push(
+      lines.push(
         this.getCodeBlock('status_bar_colors')
           .replace('fgColor', this.statusBarColors?.txt)
           .replace('bgColor', this.statusBarColors?.bg)
       )
 
-      content.push(this.getCodeBlock('attach_session'))
+      lines.push(`tmux attach-session -t "$SESSION_NAME"`)
 
-      return content.join('\n\n')
+      return lines.join('\n\n')
+    },
+
+
+    walkTree(node, currentPaneVar, lines) {
+      node = this.unwrap(node)
+
+      if (!node.items || node.items.length === 0) {
+        this.emitPaneCommands(node.command, currentPaneVar, lines)
+        return
+      }
+
+      const splitFlag =
+        node.direction === 'horizontal' ? '-h' : node.direction === 'vertical' ? '-v' : null
+
+      if (!splitFlag) {
+        node.items.forEach((child) => this.walkTree(child, currentPaneVar, lines))
+        return
+      }
+
+      this.walkTree(node.items[0], currentPaneVar, lines)
+
+      let activePane = currentPaneVar
+
+      for (let i = 1; i < node.items.length; i++) {
+        const newPane = this.nextPaneVar()
+
+        lines.push(
+          `${newPane}=$(tmux split-window ${splitFlag} -t ${activePane} -P -F '#{pane_id}')`
+        )
+
+        activePane = newPane
+        this.walkTree(node.items[i], activePane, lines)
+      }
+    },
+
+    emitPaneCommands(command, paneVar, lines) {
+      if (!command) return
+
+      const commands = Array.isArray(command) ? command : [command]
+
+      commands.forEach((cmd) => {
+        lines.push(
+          this.showComments
+            ? `# Run command\n tmux send-keys -t ${paneVar} "${cmd}" C-m`
+            : `tmux send-keys -t ${paneVar} "${cmd}" C-m`
+        )
+      })
+    },
+
+    unwrap(node) {
+      return node?._custom?.value ?? node
+    },
+
+    nextPaneVar() {
+      this._paneCounter++
+      return `PANE_${this._paneCounter}`
     },
 
     getCodeBlock(block) {
       return this.showComments
         ? `# ${blocks[block].comment}\n${blocks[block].code}`
         : blocks[block].code
-    },
-
-    getPaneVar(paneId) {
-      if (!this._paneVarMap[paneId]) {
-        this._paneVarMap[paneId] = `PANE_${this._nextShellPaneId++}`
-      }
-
-      return this._paneVarMap[paneId]
-    },
-
-    setStepAction(step) {
-      const fromVar = this.getPaneVar(step.paneId)
-      const toVar = this.getPaneVar(this._nextShellPaneId)
-
-      const splitFlag = step.action === 'split_horizontal' ? '-h' : '-v'
-
-      const comment = `# Split pane ${step.paneId} ${splitFlag === '-h' ? 'horizontally' : 'vertically'}`
-
-      return this.showComments
-        ? `${comment}\ntmux split-window ${splitFlag} -t "$${fromVar}" -P -F '#{pane_id}' > /tmp/tmux_pane\n${toVar}=$(cat /tmp/tmux_pane)`
-        : `tmux split-window ${splitFlag} -t "$${fromVar}" -P -F '#{pane_id}' > /tmp/tmux_pane\n${toVar}=$(cat /tmp/tmux_pane)`
-    },
-
-    setPaneCommand(paneId, paneCommand) {
-      const paneVar = this.getPaneVar(paneId)
-      const comment = `# Set command for pane ${paneId}`
-
-      return this.showComments
-        ? `${comment}\ntmux send-keys -t "$${paneVar}" "${paneCommand}" C-m`
-        : `tmux send-keys -t "$${paneVar}" "${paneCommand}" C-m`
     },
 
     downloadScriptAsAFile() {
@@ -255,11 +268,7 @@ export default {
     },
 
     async copyScriptToClipboard() {
-      try {
-        await navigator.clipboard.writeText(this.generatedScript)
-      } catch (err) {
-        console.error('Failed to copy tmux script:', err)
-      }
+      await navigator.clipboard.writeText(this.generatedScript)
     },
 
     toggleVisible() {

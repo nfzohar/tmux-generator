@@ -48,10 +48,8 @@
     <context-menu
       :ref="'menu'"
       :items="actions"
-      @split-vertically="splitIntoPanes('vertical')"
-      @split-horizontaly="splitIntoPanes('horizontal')"
-      @split-vertically-3-panes="splitIntoPanes('vertical', 3)"
-      @split-horizontaly-3-panes="splitIntoPanes('horizontal', 3)"
+      @split-in-2-vertically="splitIntoPanes('vertical', 2)"
+      @split-in-2-horizontaly="splitIntoPanes('horizontal', 2)"
     />
   </div>
 
@@ -101,10 +99,8 @@ export default {
         direction: ''
       },
       actions: [
-        'Split vertically',
-        'Split horizontaly',
-        'Split vertically (3 panes)',
-        'Split horizontaly (3 panes)'
+        'Split in 2 vertically',
+        'Split in 2 horizontaly',
       ]
     }
   },

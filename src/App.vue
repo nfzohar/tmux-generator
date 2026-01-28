@@ -26,7 +26,7 @@
           <small v-text="'Reset'" />
         </button>
 
-        <export-dialog />
+        <export-dialog :pane-tree="rootPane" />
       </div>
     </div>
 
@@ -86,6 +86,7 @@ export default {
           command: '',
           direction: ''
         }
+        this.refreshToken++
       }
     }
   }

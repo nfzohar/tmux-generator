@@ -63,6 +63,7 @@
       :key="i"
       :pane="child"
       @update-pane="(pane) => propagatePaneUpdate(pane)"
+      @update-history="$emit('updateHistory')"
     />
   </div>
 </template>
@@ -75,7 +76,7 @@ export default {
 
   components: { ContextMenu },
 
-  emits: ['updatePane'],
+  emits: ['updatePane', 'updateHistory'],
 
   props: {
     pane: {
@@ -98,10 +99,7 @@ export default {
         command: '',
         direction: ''
       },
-      actions: [
-        'Split in 2 vertically',
-        'Split in 2 horizontaly',
-      ]
+      actions: ['Split in 2 vertically', 'Split in 2 horizontaly']
     }
   },
 
@@ -129,6 +127,9 @@ export default {
           this.$emit('updatePane', this.currentPane)
         }, 500)
       }
+    },
+    'currentPane.command'() {
+      this.$emit('updateHistory')
     }
   },
 
@@ -157,6 +158,8 @@ export default {
         command: this.currentPane?.command || '',
         items: items
       }
+
+      this.$emit('updateHistory')
     },
 
     propagatePaneUpdate(updatedPane) {

@@ -34,7 +34,11 @@
       class="flex justify-evenly gap-1 rounded-lg h-full overflow-scroll scrollbar-hide px-3"
       :key="refreshToken"
     >
-      <preview-pane :pane="rootPane" @update-pane="(pane) => updateRootPane(pane)" />
+      <preview-pane
+        :pane="rootPane"
+        @update-pane="(pane) => updateRootPane(pane)"
+        @update-history="() => updateHistory()"
+      />
     </div>
 
     <status-bar />
@@ -63,17 +67,24 @@ export default {
 
   created() {
     this.rootPane = this.$layout.rootPane
+    this.history = []
   },
 
   methods: {
     updateRootPane(updatedRootPane) {
-      this.history.push(this.rootPane)
       this.rootPane = updatedRootPane
     },
 
+    updateHistory() {
+      this.history.push(this.rootPane)
+    },
+
     undoLastChange() {
-      this.rootPane = this.history.pop()
-      this.refreshToken++
+      if (this.history?.length) {
+        this.rootPane = this.history?.pop()
+      } else {
+        alert('No more history remaining.')
+      }
     },
 
     reset() {

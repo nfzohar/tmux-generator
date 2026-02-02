@@ -135,6 +135,7 @@ export default {
       showComments: true,
       mouseInputEnabled: false,
       tmuxInstalledCheck: false,
+      paneCommands: [],
 
       _paneCounter: 0
     }
@@ -158,8 +159,94 @@ export default {
     }
   },
 
+  watch: {
+    currentPane: {
+      deep: true,
+      handler: function () {
+        clearTimeout(this.timeout)
+        this.timeout = setTimeout(() => {
+          this.$emit('updatePane', this.currentPane)
+        }, 500)
+      }
+    },
+    'currentPane.command'() {
+      this.$emit('updateHistory')
+    }
+  },
+
   methods: {
     generateTmuxScript() {
+      const lines = [
+        '#!/bin/sh',
+        `SESSION_NAME="${this.tmuxSessionName}"`,
+        
+
+        `tmux new-session -d -s "$SESSION_NAME"
+
+        # Capture the original pane
+        PANE0=$(tmux display-message -p '#{pane_id}')
+
+        # Split into left / right (50%)
+        PANE1=$(tmux split-window -h -p 50 -P -F '#{pane_id}')
+
+        # Split the right pane into top / bottom (50%)
+        PANE2=$(tmux split-window -v -p 50 -t "$PANE1" -P -F '#{pane_id}')
+
+        # Split the top-left pane into left / right (50%)
+        PANE3=$(tmux split-window -h -p 50 -t "$PANE0" -P -F '#{pane_id}')
+
+
+        # ---- Hardcoded commands ----
+
+        # Top-left
+        tmux send-keys -t "$PANE0" "htop" C-m
+
+        # Top-middle
+        tmux send-keys -t "$PANE3" "tail -f /var/log/syslog" C-m
+
+        # Top-right
+        tmux send-keys -t "$PANE1" "watch -n1 date" C-m
+
+        # Bottom-right
+        tmux send-keys -t "$PANE2" "bash" C-m
+
+        tmux set mouse on
+
+        tmux attach-session -t "$SESSION_NAME"
+
+      SESSION_NAME="test_10"
+
+      tmux new-session -d -s "$SESSION_NAME"
+
+      # Panes
+
+      PANE0=$(tmux display-message -p '#{pane_id}')
+
+      PANE1=$(tmux split-window -h -p 50 -P -F '#{pane_id}')
+
+      PANE2=$(tmux split-window -v -p 50 -t "$PANE1" -P -F '#{pane_id}')
+
+      PANE3=$(tmux split-window -h -p 50 -t "$PANE0" -P -F '#{pane_id}')
+
+      # Commands
+
+      tmux send-keys -t "$PANE0" "htop" C-m
+
+      tmux send-keys -t "$PANE3" "tail -f /var/log/syslog" C-m
+
+      tmux send-keys -t "$PANE1" "watch -n1 date" C-m
+
+      tmux send-keys -t "$PANE2" "bash" C-m
+
+      tmux set mouse on
+
+      tmux attach-session -t "$SESSION_NAME"`
+      ]
+
+      return lines.join('\n\n')
+    },
+
+    generateTmuxScript1() {
       const lines = ['#!/bin/bash']
       this._paneCounter = 0
 
@@ -171,10 +258,10 @@ export default {
 
       lines.push(`tmux new-session -d -s "$SESSION_NAME"`)
 
-      const rootPane = this.nextPaneVar()
-      lines.push(`${rootPane}=$(tmux list-panes -t "$SESSION_NAME" -F '#{pane_id}')`)
+      // Get Root Pane ID
+      lines.push(`PANE0=$(tmux display-message -p '#{pane_id}')`)
 
-      this.walkTree(this.paneTree, rootPane, lines)
+      this.traversePaneTree(this.paneTree, 0, lines)
 
       if (this.mouseInputEnabled) {
         lines.push(this.getCodeBlock('enable_mouse_controls'))
@@ -191,41 +278,44 @@ export default {
       return lines.join('\n\n')
     },
 
-
-    walkTree(node, currentPaneVar, lines) {
-      node = this.unwrap(node)
-
-      if (!node.items || node.items.length === 0) {
-        this.emitPaneCommands(node.command, currentPaneVar, lines)
+    traversePaneTree(pane, currentPaneVar, lines) {
+      if (!pane.items || pane.items.length === 0) {
+        this.emitPaneCommands(pane.command, currentPaneVar, lines)
         return
       }
 
       const splitFlag =
-        node.direction === 'horizontal' ? '-h' : node.direction === 'vertical' ? '-v' : null
+        {
+          horizontal: 'h',
+          vertical: 'v'
+        }[pane.direction] ?? null
 
       if (!splitFlag) {
-        node.items.forEach((child) => this.walkTree(child, currentPaneVar, lines))
+        pane.items?.forEach((child) => this.traversePaneTree(child, currentPaneVar, lines))
         return
       }
 
-      this.walkTree(node.items[0], currentPaneVar, lines)
+      this.traversePaneTree(pane.items[0], currentPaneVar, lines)
 
       let activePane = currentPaneVar
 
-      for (let i = 1; i < node.items.length; i++) {
-        const newPane = this.nextPaneVar()
+      for (let i = 1; i < pane.items.length; i++) {
+        this._paneCounter++
+        const newPane = `PANE${this._paneCounter}`
 
         lines.push(
           `${newPane}=$(tmux split-window ${splitFlag} -t ${activePane} -P -F '#{pane_id}')`
         )
 
         activePane = newPane
-        this.walkTree(node.items[i], activePane, lines)
+        this.traversePaneTree(pane.items[i], activePane, lines)
       }
     },
 
     emitPaneCommands(command, paneVar, lines) {
-      if (!command) return
+      if (!command) {
+        return
+      }
 
       const commands = Array.isArray(command) ? command : [command]
 
@@ -236,15 +326,6 @@ export default {
             : `tmux send-keys -t ${paneVar} "${cmd}" C-m`
         )
       })
-    },
-
-    unwrap(node) {
-      return node?._custom?.value ?? node
-    },
-
-    nextPaneVar() {
-      this._paneCounter++
-      return `PANE_${this._paneCounter}`
     },
 
     getCodeBlock(block) {

@@ -136,8 +136,8 @@ export default {
       mouseInputEnabled: false,
       tmuxInstalledCheck: false,
       paneCommands: [],
-
-      _paneCounter: 0
+      paneSplits: [],
+      paneIndex: 0
     }
   },
 
@@ -176,95 +176,31 @@ export default {
 
   methods: {
     generateTmuxScript() {
-      const lines = [
-        '#!/bin/sh',
-        `SESSION_NAME="${this.tmuxSessionName}"`,
-        
+      this.paneCommands = []
+      this.paneSplits = []
+      this.paneIndex = 0
 
-        `tmux new-session -d -s "$SESSION_NAME"
-
-        # Capture the original pane
-        PANE0=$(tmux display-message -p '#{pane_id}')
-
-        # Split into left / right (50%)
-        PANE1=$(tmux split-window -h -p 50 -P -F '#{pane_id}')
-
-        # Split the right pane into top / bottom (50%)
-        PANE2=$(tmux split-window -v -p 50 -t "$PANE1" -P -F '#{pane_id}')
-
-        # Split the top-left pane into left / right (50%)
-        PANE3=$(tmux split-window -h -p 50 -t "$PANE0" -P -F '#{pane_id}')
-
-
-        # ---- Hardcoded commands ----
-
-        # Top-left
-        tmux send-keys -t "$PANE0" "htop" C-m
-
-        # Top-middle
-        tmux send-keys -t "$PANE3" "tail -f /var/log/syslog" C-m
-
-        # Top-right
-        tmux send-keys -t "$PANE1" "watch -n1 date" C-m
-
-        # Bottom-right
-        tmux send-keys -t "$PANE2" "bash" C-m
-
-        tmux set mouse on
-
-        tmux attach-session -t "$SESSION_NAME"
-
-      SESSION_NAME="test_10"
-
-      tmux new-session -d -s "$SESSION_NAME"
-
-      # Panes
-
-      PANE0=$(tmux display-message -p '#{pane_id}')
-
-      PANE1=$(tmux split-window -h -p 50 -P -F '#{pane_id}')
-
-      PANE2=$(tmux split-window -v -p 50 -t "$PANE1" -P -F '#{pane_id}')
-
-      PANE3=$(tmux split-window -h -p 50 -t "$PANE0" -P -F '#{pane_id}')
-
-      # Commands
-
-      tmux send-keys -t "$PANE0" "htop" C-m
-
-      tmux send-keys -t "$PANE3" "tail -f /var/log/syslog" C-m
-
-      tmux send-keys -t "$PANE1" "watch -n1 date" C-m
-
-      tmux send-keys -t "$PANE2" "bash" C-m
-
-      tmux set mouse on
-
-      tmux attach-session -t "$SESSION_NAME"`
-      ]
-
-      return lines.join('\n\n')
-    },
-
-    generateTmuxScript1() {
-      const lines = ['#!/bin/bash']
-      this._paneCounter = 0
-
-      lines.push(`SESSION_NAME="${this.tmuxSessionName}"`)
+      let lines = ['#!/bin/sh', `SESSION_NAME="${this.tmuxSessionName}"`]
 
       if (this.tmuxInstalledCheck) {
         lines.push(this.getCodeBlock('is_tmux_installed_check'))
       }
 
-      lines.push(`tmux new-session -d -s "$SESSION_NAME"`)
+      lines.push('tmux new-session -d -s "$SESSION_NAME"')
+      lines.push(`PANE${this.paneIndex}=$(tmux display-message -p '#{pane_id}')`)
 
-      // Get Root Pane ID
-      lines.push(`PANE0=$(tmux display-message -p '#{pane_id}')`)
+      this.traversePaneTree(this.paneTree, this.paneIndex)
 
-      this.traversePaneTree(this.paneTree, 0, lines)
+      if (this.paneSplits?.length) {
+        lines = this.showComments
+          ? [...lines, '# Pane splits', ...this.paneSplits]
+          : [...lines, ...this.paneSplits]
+      }
 
-      if (this.mouseInputEnabled) {
-        lines.push(this.getCodeBlock('enable_mouse_controls'))
+      if (this.paneCommands?.length) {
+        lines = this.showComments
+          ? [...lines, '# Pane commands', ...this.paneCommands]
+          : [...lines, ...this.paneCommands]
       }
 
       lines.push(
@@ -273,65 +209,47 @@ export default {
           .replace('bgColor', this.statusBarColors?.bg)
       )
 
+      if (this.mouseInputEnabled) {
+        lines.push(this.getCodeBlock('enable_mouse_controls'))
+      }
+
       lines.push(`tmux attach-session -t "$SESSION_NAME"`)
 
       return lines.join('\n\n')
     },
 
-    traversePaneTree(pane, currentPaneVar, lines) {
-      if (!pane.items || pane.items.length === 0) {
-        this.emitPaneCommands(pane.command, currentPaneVar, lines)
-        return
-      }
+    traversePaneTree(pane, currentPaneVar) {
+      let currentPaneId = currentPaneVar
 
+      if (pane?.items?.length) {
+        pane.items.forEach((childPane) => {
+          this.paneIndex++
+          this.traversePaneTree(childPane, this.paneIndex)
+        })
+      } else {
+        this.buildPaneSplit(pane, currentPaneId, currentPaneVar)
+        this.buildPaneCommand(pane, currentPaneId, currentPaneVar)
+      }
+    },
+
+    buildPaneSplit(pane, parentPaneId, currentPaneVar) {
       const splitFlag =
         {
-          horizontal: 'h',
-          vertical: 'v'
+          horizontal: '-h',
+          vertical: '-v'
         }[pane.direction] ?? null
 
-      if (!splitFlag) {
-        pane.items?.forEach((child) => this.traversePaneTree(child, currentPaneVar, lines))
-        return
-      }
+      // PANE3=$(tmux split-window -h -p 50 -t "$PANE0" -P -F '#{pane_id}')
 
-      this.traversePaneTree(pane.items[0], currentPaneVar, lines)
-
-      let activePane = currentPaneVar
-
-      for (let i = 1; i < pane.items.length; i++) {
-        this._paneCounter++
-        const newPane = `PANE${this._paneCounter}`
-
-        lines.push(
-          `${newPane}=$(tmux split-window ${splitFlag} -t ${activePane} -P -F '#{pane_id}')`
-        )
-
-        activePane = newPane
-        this.traversePaneTree(pane.items[i], activePane, lines)
-      }
+      this.paneSplits.push(
+        `PANE${currentPaneVar}=$(tmux split-window ${splitFlag} -p 50 -t "$PANE${parentPaneId}" -P -F '#{pane_id}')`
+      )
     },
 
-    emitPaneCommands(command, paneVar, lines) {
-      if (!command) {
-        return
+    buildPaneCommand(pane, currentPaneVar) {
+      if (pane?.command) {
+        this.paneCommands.push(`tmux send-keys -t "$PANE${currentPaneVar}" "${pane?.command}" C-m`)
       }
-
-      const commands = Array.isArray(command) ? command : [command]
-
-      commands.forEach((cmd) => {
-        lines.push(
-          this.showComments
-            ? `# Run command\n tmux send-keys -t ${paneVar} "${cmd}" C-m`
-            : `tmux send-keys -t ${paneVar} "${cmd}" C-m`
-        )
-      })
-    },
-
-    getCodeBlock(block) {
-      return this.showComments
-        ? `# ${blocks[block].comment}\n${blocks[block].code}`
-        : blocks[block].code
     },
 
     downloadScriptAsAFile() {
@@ -350,6 +268,12 @@ export default {
 
     async copyScriptToClipboard() {
       await navigator.clipboard.writeText(this.generatedScript)
+    },
+
+    getCodeBlock(block) {
+      return this.showComments
+        ? `# ${blocks[block].comment}\n${blocks[block].code}`
+        : blocks[block].code
     },
 
     toggleVisible() {

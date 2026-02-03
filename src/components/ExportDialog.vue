@@ -266,14 +266,14 @@ export default {
       URL.revokeObjectURL(url)
     },
 
-    async copyScriptToClipboard() {
-      await navigator.clipboard.writeText(this.generatedScript)
-    },
-
     getCodeBlock(block) {
       return this.showComments
         ? `# ${blocks[block].comment}\n${blocks[block].code}`
         : blocks[block].code
+    },
+
+    async copyScriptToClipboard() {
+      await navigator.clipboard.writeText(this.generatedScript)
     }
   }
 }

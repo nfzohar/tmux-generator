@@ -2,7 +2,7 @@
   <button
     class="flex items-center bg-green-700 gap-2 py-1 px-3 hover:bg-green-800 transition-colors rounded-md font-semibold cursor-pointer"
     :title="'Export layout as program'"
-    @click.prevent="toggleVisible"
+    @click.prevent="show = !show"
   >
     <i class="fa fa-file" />
     <small v-text="'Export'" />
@@ -11,7 +11,7 @@
   <div
     v-if="show"
     class="fixed inset-0 bg-black/30 flex items-center justify-center z-50"
-    @click.prevent="toggleVisible"
+    @click.prevent="show = !show"
   >
     <div class="bg-white dark:bg-gray-900 rounded-lg p-6 w-full mx-64 h-[80vh]" @click.stop>
       <div class="flex items-start gap-5 w-full h-full">
@@ -274,10 +274,6 @@ export default {
       return this.showComments
         ? `# ${blocks[block].comment}\n${blocks[block].code}`
         : blocks[block].code
-    },
-
-    toggleVisible() {
-      this.show = !this.show
     }
   }
 }

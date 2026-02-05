@@ -41,7 +41,7 @@
             >
               <input
                 id="tmux-installed-check"
-                v-model="tmuxInstalledCheck"
+                v-model="checkTmuxInstall"
                 type="checkbox"
                 class="rounded border-slate-600"
               />
@@ -114,7 +114,7 @@
 
 <script>
 import InputWrapper from './InputWrapper.vue'
-import blocks from '../assets/codeBlocks'
+import blocks from '../assets/blocks'
 
 export default {
   name: 'ExportDialog',
@@ -134,7 +134,7 @@ export default {
       sessionName: '',
       showComments: true,
       mouseInputEnabled: false,
-      tmuxInstalledCheck: false,
+      checkTmuxInstall: false,
       paneCommands: [],
       paneSplits: [],
       paneIndex: 0
@@ -178,16 +178,25 @@ export default {
     generateTmuxScript() {
       this.paneCommands = []
       this.paneSplits = []
-      this.paneIndex = 0
+      this.paneIndex = 2
 
-      let lines = ['#!/bin/sh', `SESSION_NAME="${this.tmuxSessionName}"`]
+      let lines = ['#!/bin/sh']
 
-      if (this.tmuxInstalledCheck) {
+      if (this.checkTmuxInstall) {
         lines.push(this.getCodeBlock('is_tmux_installed_check'))
       }
 
-      lines.push('tmux new-session -d -s "$SESSION_NAME"')
-      lines.push(`PANE${this.paneIndex}=$(tmux display-message -p '#{pane_id}')`)
+      lines = [
+        ...lines,
+        `SESSION_NAME="${this.tmuxSessionName}"`,
+        'tmux new-session -d -s "$SESSION_NAME"'
+      ]
+
+      this.paneSplits = [
+        ...this.paneSplits,
+        `PANE0=$(tmux display-message -p '#{pane_id}')`,
+        `PANE1=$(tmux split-window -h -p 50 -P -F '#{pane_id}')`
+      ]
 
       this.traversePaneTree(this.paneTree, this.paneIndex)
 
@@ -218,17 +227,15 @@ export default {
       return lines.join('\n\n')
     },
 
-    traversePaneTree(pane, currentPaneVar) {
-      let currentPaneId = currentPaneVar
-
+    traversePaneTree(pane, currentPaneVar, parentId = 0) {
       if (pane?.items?.length) {
         pane.items.forEach((childPane) => {
+          this.traversePaneTree(childPane, this.paneIndex, pane?.id)
           this.paneIndex++
-          this.traversePaneTree(childPane, this.paneIndex)
         })
       } else {
-        this.buildPaneSplit(pane, currentPaneId, currentPaneVar)
-        this.buildPaneCommand(pane, currentPaneId, currentPaneVar)
+        this.buildPaneSplit(pane, parentId, currentPaneVar)
+        this.buildPaneCommand(pane, parentId, currentPaneVar)
       }
     },
 

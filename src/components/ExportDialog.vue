@@ -192,11 +192,10 @@ export default {
         'tmux new-session -d -s "$SESSION_NAME"'
       ]
 
-      this.paneSplits = [
-        ...this.paneSplits,
-        `PANE0=$(tmux display-message -p '#{pane_id}')`,
-        `PANE1=$(tmux split-window -h -p 50 -P -F '#{pane_id}')`
-      ]
+      // Root - pane 0
+      this.paneSplits.push(`PANE0=$(tmux display-message -t "$SESSION":0.0 -p '#{pane_id}')`)
+      // Root pane split - pane 1
+      this.paneSplits.push(`PANE1=$(tmux split-window -h -p 50 -P -F '#{pane_id}')`)
 
       this.traversePaneTree(this.paneTree, this.paneIndex)
 
@@ -227,26 +226,23 @@ export default {
       return lines.join('\n\n')
     },
 
-    traversePaneTree(pane, currentPaneVar, parentId = 0) {
+    traversePaneTree(pane, currentPaneVar, parentId = 0) {      
       if (pane?.items?.length) {
+        if (pane?.direction) {
+          this.buildPaneSplit(pane, parentId, currentPaneVar)
+        }
+
         pane.items.forEach((childPane) => {
           this.traversePaneTree(childPane, this.paneIndex, pane?.id)
           this.paneIndex++
         })
       } else {
-        this.buildPaneSplit(pane, parentId, currentPaneVar)
         this.buildPaneCommand(pane, parentId, currentPaneVar)
       }
     },
 
     buildPaneSplit(pane, parentPaneId, currentPaneVar) {
-      const splitFlag =
-        {
-          horizontal: '-h',
-          vertical: '-v'
-        }[pane.direction] ?? null
-
-      // PANE3=$(tmux split-window -h -p 50 -t "$PANE0" -P -F '#{pane_id}')
+      const splitFlag = { horizontal: '-h', vertical: '-v' }[pane?.direction] ?? null
 
       this.paneSplits.push(
         `PANE${currentPaneVar}=$(tmux split-window ${splitFlag} -p 50 -t "$PANE${parentPaneId}" -P -F '#{pane_id}')`

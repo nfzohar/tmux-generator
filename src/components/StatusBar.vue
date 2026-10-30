@@ -1,10 +1,10 @@
 <template>
   <div
-    class="flex flex-row gap-2 items-center justify-between px-3 py-2 w-full text-sm dark:bg-slate-800"
+    class="flex flex-row gap-2 items-center justify-between px-3 py-2 w-full text-sm bg-white ring-1 ring-gray-200 dark:bg-slate-800 dark:ring-0"
   >
     <div class="flex items-center gap-2 min-w-0">
       <button
-        class="flex items-center shrink-0 p-2 bg-gray-700 text-white hover:bg-blue-800 transition-colors rounded-md cursor-pointer"
+        class="flex items-center shrink-0 p-2 bg-white text-gray-700 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 hover:text-blue-700 dark:bg-gray-700 dark:text-white dark:ring-0 dark:hover:bg-blue-800 dark:hover:text-white transition-colors rounded-md cursor-pointer"
         :title="'Add new window'"
         @click="$layout.addWindow()"
       >
@@ -27,11 +27,11 @@
           />
           <div
             v-else
-            class="flex items-center rounded-md font-semibold whitespace-nowrap text-white transition-colors"
+            class="flex items-center rounded-md font-semibold whitespace-nowrap transition-colors"
             :class="
               window.id === $layout.activeWindowId
-                ? 'bg-green-700 hover:bg-green-800'
-                : 'bg-gray-700 hover:bg-blue-800'
+                ? 'bg-green-700 hover:bg-green-800 text-white'
+                : 'bg-white text-gray-700 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 hover:text-blue-700 dark:bg-gray-700 dark:text-white dark:ring-0 dark:hover:bg-blue-800 dark:hover:text-white'
             "
             :data-active="window.id === $layout.activeWindowId || undefined"
           >
@@ -66,7 +66,7 @@
           <input
             id="foreground_color_select"
             v-model="$layout.colors.txt"
-            class="w-5 h-5 rounded-xs border-2 border-gray-700"
+            class="w-5 h-5 rounded-xs border-2 border-gray-300 dark:border-gray-700"
             type="color"
           />
         </div>
@@ -75,14 +75,14 @@
           <input
             id="background_color_select"
             v-model="$layout.colors.bg"
-            class="w-5 h-5 rounded-xs border-2 border-gray-700"
+            class="w-5 h-5 rounded-xs border-2 border-gray-300 dark:border-gray-700"
             type="color"
           />
         </div>
       </div>
 
       <span
-        class="py-1 px-2 rounded-md border border-gray-800"
+        class="py-1 px-2 rounded-md border border-gray-300 dark:border-gray-800"
         :style="{ backgroundColor: $layout.colors.bg, color: $layout.colors.txt }"
         :title="'Status bar custom color preview'"
         v-text="timestamp"

@@ -3,15 +3,17 @@
     <div
       v-show="visible"
       ref="menu"
-      class="fixed z-[9999] text-black dark:text-white"
+      class="fixed z-[9999] text-gray-900 dark:text-white"
       :style="{ left: `${pos.x}px`, top: `${pos.y}px` }"
       @click.stop
     >
-      <ul class="menu flex flex-col rounded-md shadow-xl overflow-hidden border border-gray-700">
+      <ul
+        class="menu flex flex-col rounded-md shadow-xl overflow-hidden border border-gray-200 dark:border-gray-700"
+      >
         <li
           v-for="(item, index) in items"
           :key="item.label"
-          class="cursor-pointer bg-white dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 p-4 text-sm"
+          class="cursor-pointer bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 p-4 text-sm"
           v-text="item.label"
           @click="select(index)"
         />

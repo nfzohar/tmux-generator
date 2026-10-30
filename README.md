@@ -19,6 +19,9 @@ pane in place and every command already running.
   over.
 - **Export** shows the script, ready to copy or download.
 
+The builder starts in your browser's light or dark theme, the sun/moon button in the
+header switches between them.
+
 ### Export options
 
 | Option | What it does |

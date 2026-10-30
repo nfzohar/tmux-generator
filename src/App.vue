@@ -1,15 +1,19 @@
 <template>
   <div
-    class="flex flex-col h-screen bg-gray-100 dark:bg-slate-900 gap-3 text-black dark:text-white"
+    class="flex flex-col h-screen bg-gray-200 dark:bg-slate-900 gap-3 text-gray-900 dark:text-white"
   >
-    <div class="flex flex-row gap-2 items-center justify-between p-3 w-full dark:bg-slate-800">
-      <h1 class="block w-full font-base">
+    <div
+      class="flex flex-row gap-2 items-center justify-between p-3 w-full bg-white ring-1 ring-gray-200 dark:bg-slate-800 dark:ring-0"
+    >
+      <h1 class="block w-full min-w-0 truncate">
         <strong>Tmux Builder</strong> | <small>Build & export your new TMUX layout</small>
       </h1>
 
-      <div class="flex items-center gap-2 text-white">
+      <div class="flex items-center gap-2">
+        <theme-toggle />
+
         <button
-          class="flex items-center gap-2 py-1 px-2 bg-gray-700 hover:bg-blue-800 transition-colors rounded-md font-semibold cursor-pointer"
+          class="flex items-center gap-2 py-1 px-2 bg-white text-gray-700 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 hover:text-blue-700 dark:bg-gray-700 dark:text-white dark:ring-0 dark:hover:bg-blue-800 dark:hover:text-white transition-colors rounded-md font-semibold cursor-pointer"
           :title="'Undo last change'"
           @click="undoLastChange()"
         >
@@ -18,7 +22,7 @@
         </button>
 
         <button
-          class="flex items-center bg-gray-700 gap-2 py-1 px-3 hover:bg-blue-800 transition-colors rounded-md font-semibold cursor-pointer"
+          class="flex items-center gap-2 py-1 px-3 bg-white text-gray-700 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 hover:text-blue-700 dark:bg-gray-700 dark:text-white dark:ring-0 dark:hover:bg-blue-800 dark:hover:text-white transition-colors rounded-md font-semibold cursor-pointer"
           :title="'Do full reset'"
           @click.prevent="reset"
         >
@@ -43,11 +47,12 @@ import { defineComponent } from 'vue'
 import StatusBar from './components/StatusBar.vue'
 import PreviewPane from './components/PreviewPane.vue'
 import ExportDialog from './components/ExportDialog.vue'
+import ThemeToggle from './components/ThemeToggle.vue'
 
 export default defineComponent({
   name: 'TmuxLayoutBuilder',
 
-  components: { StatusBar, PreviewPane, ExportDialog },
+  components: { StatusBar, PreviewPane, ExportDialog, ThemeToggle },
 
   methods: {
     undoLastChange() {

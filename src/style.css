@@ -1,1 +1,17 @@
 @import 'tailwindcss';
+
+/*
+ * Dark mode follows the browser theme until the theme toggle sets data-theme="light" or
+ * "dark" on <html>.
+ */
+@custom-variant dark {
+  &:where([data-theme='dark'], [data-theme='dark'] *) {
+    @slot;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    &:where(:not([data-theme='light'], [data-theme='light'] *)) {
+      @slot;
+    }
+  }
+}

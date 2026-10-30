@@ -1,6 +1,6 @@
 <template>
   <button
-    class="flex items-center bg-green-700 gap-2 py-1 px-3 hover:bg-green-800 transition-colors rounded-md font-semibold cursor-pointer"
+    class="flex items-center bg-green-700 text-white gap-2 py-1 px-3 hover:bg-green-800 transition-colors rounded-md font-semibold cursor-pointer"
     :title="'Export layout as program'"
     @click.prevent="show = !show"
   >
@@ -14,7 +14,7 @@
     @click.self="show = false"
   >
     <div
-      class="bg-white dark:bg-gray-900 text-black dark:text-white rounded-lg p-6 w-full max-w-6xl mx-4 h-[80vh]"
+      class="bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-lg p-6 w-full max-w-6xl mx-4 h-[80vh]"
     >
       <div class="flex items-start gap-5 w-full h-full">
         <div class="flex flex-col gap-3 w-64 shrink-0">
@@ -29,7 +29,7 @@
                 v-model="sessionName"
                 id="session-name"
                 type="text"
-                class="block w-full p-2 rounded-md shadow-sm focus:outline-none focus:ring-0 bg-white dark:bg-slate-700"
+                class="block w-full p-2 rounded-md shadow-sm ring-1 ring-inset ring-gray-300 focus:outline-none focus:ring-2 focus:ring-green-700 bg-white dark:bg-slate-700 dark:ring-0 dark:focus:ring-0"
                 :placeholder="generatedSessionName"
               />
             </input-wrapper>
@@ -96,7 +96,7 @@
             <span class="font-medium" v-text="'Generated Script'" />
 
             <button
-              class="flex items-center bg-gray-700 text-white gap-2 p-2 hover:bg-blue-800 transition-colors rounded-md font-semibold cursor-pointer"
+              class="flex items-center gap-2 p-2 bg-white text-gray-700 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 hover:text-blue-700 dark:bg-gray-700 dark:text-white dark:ring-0 dark:hover:bg-blue-800 dark:hover:text-white transition-colors rounded-md font-semibold cursor-pointer"
               @click="copyScriptToClipboard()"
             >
               <i class="fa" :class="copied ? 'fa-check' : 'fa-copy'" />

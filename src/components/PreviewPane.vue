@@ -40,7 +40,7 @@
 
     <textarea
       :value="pane.command"
-      class="block w-full h-full px-4 py-2 focus:outline-none rounded-b-lg border-t dark:border-none resize-none bg-transparent"
+      class="block w-full h-full px-4 py-2 focus:outline-none rounded-b-lg border-t border-gray-200 dark:border-none resize-none bg-transparent"
       :placeholder="'Enter command...'"
       @input="setCommand"
       @focus="startEditing"

@@ -1,70 +1,66 @@
 <template>
   <div
     v-if="!isPaneGroup"
-    class="h-full w-full bg-white dark:bg-black border-2 border-gray-300 dark:border-slate-800 rounded-md min-h-[120px] flex flex-col transition-all duration-200"
-    ref="pane-body"
+    class="@container flex-1 min-w-0 bg-white dark:bg-black border-2 border-gray-300 dark:border-slate-800 rounded-md min-h-[120px] flex flex-col transition-all duration-200"
     @contextmenu.prevent="openContextMenu"
   >
-    <div class="flex items-center justify-between">
-      <div class="flex items-center gap-2 px-2">
+    <div class="flex items-center justify-between min-w-0">
+      <div class="flex items-center gap-2 px-2 min-w-0">
         <div
-          class="w-3 h-3 rounded-full"
-          :class="isFocused ? `bg-[${backgroundColorHex}]` : 'bg-gray-500'"
+          class="w-3 h-3 shrink-0 rounded-full bg-gray-500"
+          :style="isFocused ? { backgroundColor: focusColor } : {}"
         />
-        <span class="text-sm font-medium capitalize" v-text="`Pane ${currentPane?.id ?? ''}`" />
+        <span class="text-sm font-medium whitespace-nowrap" :title="`Pane ${pane.id}`">
+          <span class="hidden @[10rem]:inline" v-text="'Pane '" />{{ pane.id }}
+        </span>
       </div>
 
-      <div class="flex items-center gap-1 p-2">
+      <div class="flex items-center gap-1 p-2 shrink-0">
         <button
           class="flex items-center gap-1 p-1 transition-colors rounded-md font-semibold cursor-pointer hover:text-blue-500 text-md"
-          :title="'Split this pane horizontaly'"
+          :title="'Split this pane horizontally'"
           tabindex="-1"
           @click="splitIntoPanes('horizontal')"
         >
           <i class="fa fa-arrows-left-right" />
-          <small v-show="!isSmallPane" v-text="'Split horizontally'" />
+          <small class="hidden @sm:inline" v-text="'Split horizontally'" />
         </button>
 
         <button
           class="flex items-center gap-1 p-1 transition-colors rounded-md font-semibold cursor-pointer hover:text-blue-500 text-md"
-          :title="'Split this pane verticaly'"
+          :title="'Split this pane vertically'"
           tabindex="-1"
           @click="splitIntoPanes('vertical')"
         >
           <i class="fa fa-arrows-up-down" />
-          <small v-show="!isSmallPane" v-text="'Split vertically'" />
+          <small class="hidden @sm:inline" v-text="'Split vertically'" />
         </button>
       </div>
     </div>
 
     <textarea
-      v-model="currentPane.command"
-      class="block w-full h-full px-4 py-2 focus:outline-none rounded-b-lg border-t dark:border-none resize-none"
+      :value="pane.command"
+      class="block w-full h-full px-4 py-2 focus:outline-none rounded-b-lg border-t dark:border-none resize-none bg-transparent"
       :placeholder="'Enter command...'"
-      @focusout="isFocused = false"
-      @focusin="isFocused = true"
+      @input="$layout.setCommand(pane.id, $event.target.value)"
+      @focus="startEditing"
+      @blur="isFocused = false"
+      @change="$layout.pushHistory(snapshotBeforeEdit)"
     />
 
     <context-menu
-      :ref="'menu'"
+      ref="menu"
       :items="actions"
-      @split-in-2-vertically="splitIntoPanes('vertical', 2)"
-      @split-in-2-horizontaly="splitIntoPanes('horizontal', 2)"
+      @select="(action) => splitIntoPanes(...action.split)"
     />
   </div>
 
   <div
     v-else
-    class="flex gap-2 w-full h-full"
-    :class="paneGroupDirection == 'vertical' ? 'flex-col' : 'flex-row'"
+    class="flex flex-1 min-w-0 min-h-0 gap-2"
+    :class="pane.direction == 'vertical' ? 'flex-col' : 'flex-row'"
   >
-    <preview-pane
-      v-for="(child, i) in paneGroupChildren"
-      :key="i"
-      :pane="child"
-      @update-pane="(pane) => propagatePaneUpdate(pane)"
-      @update-history="$emit('updateHistory')"
-    />
+    <preview-pane v-for="child in pane.items" :key="child.id" :pane="child" />
   </div>
 </template>
 
@@ -76,105 +72,44 @@ export default {
 
   components: { ContextMenu },
 
-  emits: ['updatePane', 'updateHistory'],
-
   props: {
     pane: {
       type: Object,
-      required: true,
-      default: () => {
-        return { id: 0, items: [], command: '', direction: '' }
-      }
+      required: true
     }
   },
 
   data() {
     return {
-      isSmallPane: false,
       isFocused: false,
-      timeout: null,
-      currentPane: {
-        id: 0,
-        items: [],
-        command: '',
-        direction: ''
-      },
-      actions: ['Split in 2 vertically', 'Split in 2 horizontaly']
+      snapshotBeforeEdit: null,
+      actions: [
+        { label: 'Split in 2 horizontally', split: ['horizontal', 2] },
+        { label: 'Split in 2 vertically', split: ['vertical', 2] },
+        { label: 'Split in 3 horizontally', split: ['horizontal', 3] },
+        { label: 'Split in 3 vertically', split: ['vertical', 3] }
+      ]
     }
   },
 
   computed: {
-    paneGroupDirection() {
-      return this.currentPane?.direction ?? 'horizontal'
-    },
     isPaneGroup() {
-      return this.currentPane?.items?.length > 0
+      return this.pane.items?.length > 0
     },
-    paneGroupChildren() {
-      return this.currentPane?.items ?? []
-    },
-    backgroundColorHex() {
-      return this.$layout?.colors?.bg
+    focusColor() {
+      return this.$layout.colors.bg
     }
-  },
-
-  watch: {
-    currentPane: {
-      deep: true,
-      handler: function () {
-        clearTimeout(this.timeout)
-        this.timeout = setTimeout(() => {
-          this.$emit('updatePane', this.currentPane)
-        }, 500)
-      }
-    },
-    'currentPane.command'() {
-      this.$emit('updateHistory')
-    }
-  },
-
-  mounted() {
-    this.checkPaneDimensions()
-    this.currentPane = this.pane
   },
 
   methods: {
     splitIntoPanes(direction, paneCount = 2) {
-      let items = []
-
-      for (let index = 0; items?.length < paneCount; index++) {
-        items.push({
-          id: this.$layout.nextPaneId,
-          direction: '',
-          command: '',
-          items: []
-        })
-        this.$layout.setNextPaneId()
-      }
-
-      this.currentPane = {
-        id: this.currentPane?.id,
-        direction: direction,
-        command: this.currentPane?.command || '',
-        items: items
-      }
-
-      this.$emit('updateHistory')
+      this.$layout.splitPane(this.pane.id, direction, paneCount)
     },
 
-    propagatePaneUpdate(updatedPane) {
-      this.currentPane.items = this.currentPane.items.map((pane) =>
-        pane.id == updatedPane.id ? updatedPane : pane
-      )
-    },
-
-    checkPaneDimensions() {
-      const el = this.$refs['pane-body']
-
-      if (el) {
-        const width = el.offsetWidth
-        this.isSmallPane = width < 400
-      }
+    startEditing() {
+      this.isFocused = true
+      // Typing is one undo step: the snapshot is committed on change (blur after an edit)
+      this.snapshotBeforeEdit = this.$layout.snapshot()
     },
 
     openContextMenu(e) {

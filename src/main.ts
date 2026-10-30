@@ -3,6 +3,7 @@ import { createPinia } from 'pinia'
 import App from './App.vue'
 
 import '@fortawesome/fontawesome-free/css/all.css'
+import './style.css'
 
 import plugin from './stores/index'
 

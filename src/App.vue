@@ -26,19 +26,12 @@
           <small v-text="'Reset'" />
         </button>
 
-        <export-dialog :pane-tree="rootPane" />
+        <export-dialog :pane-tree="$layout.rootPane" />
       </div>
     </div>
 
-    <div
-      class="flex justify-evenly gap-1 rounded-lg h-full overflow-scroll scrollbar-hide px-3"
-      :key="refreshToken"
-    >
-      <preview-pane
-        :pane="rootPane"
-        @update-pane="(pane) => updateRootPane(pane)"
-        @update-history="() => updateHistory()"
-      />
+    <div class="flex gap-1 rounded-lg flex-1 min-h-0 overflow-scroll scrollbar-hide px-3">
+      <preview-pane :pane="$layout.rootPane" />
     </div>
 
     <status-bar />
@@ -57,32 +50,9 @@ export default {
 
   components: { StatusBar, PreviewPane, ExportDialog },
 
-  data() {
-    return {
-      refreshToken: 0,
-      rootPane: null,
-      history: []
-    }
-  },
-
-  created() {
-    this.rootPane = this.$layout.rootPane
-    this.history = []
-  },
-
   methods: {
-    updateRootPane(updatedRootPane) {
-      this.rootPane = updatedRootPane
-    },
-
-    updateHistory() {
-      this.history.push(this.rootPane)
-    },
-
     undoLastChange() {
-      if (this.history?.length) {
-        this.rootPane = this.history?.pop()
-      } else {
+      if (!this.$layout.undo()) {
         alert('No more history remaining.')
       }
     },
@@ -90,14 +60,6 @@ export default {
     reset() {
       if (confirm('Are you sure? This will delete the current layout.')) {
         this.$layout.resetBuilder()
-        this.history = []
-        this.rootPane = {
-          id: 0,
-          items: [],
-          command: '',
-          direction: ''
-        }
-        this.refreshToken++
       }
     }
   }

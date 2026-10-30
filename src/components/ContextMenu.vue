@@ -3,30 +3,36 @@
     <div
       v-show="visible"
       ref="menu"
-      class="absolute z-[9999] text-black dark:text-white"
+      class="fixed z-[9999] text-black dark:text-white"
       :style="{ left: `${pos.x}px`, top: `${pos.y}px` }"
       @click.stop
     >
       <ul class="menu flex flex-col rounded-md shadow-xl overflow-hidden border border-gray-700">
-        <template v-for="item in items" :key="item">
-          <li
-            class="cursor-pointer bg-white dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-800/50 p-4 text-sm"
-            v-text="item"
-            @click="emit(item)"
-          />
-        </template>
+        <li
+          v-for="item in items"
+          :key="item.label"
+          class="cursor-pointer bg-white dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 p-4 text-sm"
+          v-text="item.label"
+          @click="select(item)"
+        />
       </ul>
     </div>
   </Teleport>
 </template>
 
 <script>
+// Only one context menu may be open at a time, across all panes
+let openMenu = null
+
 export default {
   name: 'ContextMenu',
 
+  emits: ['select'],
+
   props: {
+    // [{ label: String, ...anything passed back on select }]
     items: {
-      type: [Array, Object],
+      type: Array,
       required: false,
       default: () => []
     }
@@ -48,10 +54,13 @@ export default {
   },
 
   methods: {
-    open(e, pane) {
+    open(e) {
       e.preventDefault()
 
-      this.pane = pane
+      if (openMenu && openMenu !== this) {
+        openMenu.hide()
+      }
+      openMenu = this
       this.visible = true
 
       this.$nextTick(() => {
@@ -80,18 +89,9 @@ export default {
       this.visible = false
     },
 
-    emit(value) {
-      this.$emit(this.emitify(value))
+    select(item) {
+      this.$emit('select', item)
       this.hide()
-    },
-
-    emitify(value) {
-      return value
-        .replace(/[()]/g, '')
-        .replace(/\s+/g, ' ')
-        .split(' ')
-        .map((w) => `${w.charAt(0).toUpperCase()}${w.slice(1)}`)
-        .join('')
     }
   }
 }

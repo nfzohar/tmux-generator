@@ -24,18 +24,18 @@
         <div class="flex items-center gap-1" :title="'Select status bar foreground color'">
           <label :for="'foreground_color_select'" v-text="'Text'" />
           <input
-            v-model="textColor"
+            id="foreground_color_select"
+            v-model="$layout.colors.txt"
             class="w-5 h-5 rounded-xs border-2 border-gray-700"
-            name="foreground_color_select"
             type="color"
           />
         </div>
         <div class="flex items-center gap-1" :title="'Select status bar background color'">
           <label :for="'background_color_select'" v-text="'Background'" />
           <input
-            v-model="bgColor"
+            id="background_color_select"
+            v-model="$layout.colors.bg"
             class="w-5 h-5 rounded-xs border-2 border-gray-700"
-            name="background_color_select"
             type="color"
           />
         </div>
@@ -43,7 +43,7 @@
 
       <span
         class="py-1 px-2 rounded-md border border-gray-800"
-        :class="`bg-[${storedBgColor}] text-[${storedTextColor}]`"
+        :style="{ backgroundColor: $layout.colors.bg, color: $layout.colors.txt }"
         :title="'Status bar custom color preview'"
         v-text="timestamp"
       />
@@ -57,57 +57,16 @@ import format from 'date-fns/format'
 export default {
   name: 'StatusBar',
 
-  props: {
-    pane: {
-      type: Object,
-      required: false,
-      default: () => {}
-    }
-  },
-
   data() {
     return {
       sequence: 1,
       windows: ['Window'],
       timestamp: '',
-      textColor: '',
-      bgColor: '',
       timer: null
     }
   },
 
-  computed: {
-    storedBgColor() {
-      return this.$layout.colors.bg
-    },
-    storedTextColor() {
-      return this.$layout.colors.txt
-    }
-  },
-
-  watch: {
-    textColor() {
-      this.$layout.colors['txt'] = this.textColor
-    },
-    bgColor() {
-      this.$layout.colors['bg'] = this.bgColor
-    },
-    storedTextColor() {
-      if (this.textColor != this.storedTextColor) {
-        this.textColor = this.storedTextColor
-      }
-    },
-    storedBgColor() {
-      if (this.bgColor != this.storedBgColor) {
-        this.bgColor = this.storedBgColor
-      }
-    }
-  },
-
   mounted() {
-    this.bgColor = this.storedBgColor
-    this.textColor = this.storedTextColor
-
     this.updateTime()
     this.timer = setInterval(this.updateTime, 1000)
   },

@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { generateScript, type Direction, type Pane, type ScriptOptions } from '../generator'
+import {
+  generateScript,
+  type Direction,
+  type Pane,
+  type ScriptOptions,
+  type TmuxWindow
+} from '../generator'
 
 const leaf = (id: number, command = ''): Pane => ({ id, direction: '', command, items: [] })
 const split = (id: number, direction: Direction, items: Pane[]): Pane => ({
@@ -17,11 +23,21 @@ const options: ScriptOptions = {
   checkTmuxInstall: false
 }
 
+const window = (id: number, name: string, rootPane: Pane): TmuxWindow => ({ id, name, rootPane })
+
+const generateWindows = (windows: TmuxWindow[], overrides: Partial<ScriptOptions> = {}) =>
+  generateScript(windows, { ...options, ...overrides })
+
 const generate = (pane: Pane, overrides: Partial<ScriptOptions> = {}) =>
-  generateScript(pane, { ...options, ...overrides })
+  generateWindows([window(0, 'main', pane)], overrides)
+
+const leaves = (pane: Pane): Pane[] => (pane.items.length ? pane.items.flatMap(leaves) : [pane])
+
+// Trimmed lines, the session's layout is indented inside an if-block
+const scriptLines = (script: string) => script.split('\n').map((line) => line.trim())
 
 const linesWith = (script: string, text: string) =>
-  script.split('\n').filter((line) => line.includes(text))
+  scriptLines(script).filter((line) => line.includes(text))
 
 const splitLine = (newVar: string, flag: string, target: string, size: number) =>
   `${newVar}=$(tmux split-window ${flag} -t "$${target}" -l ${size}% -P -F '#{pane_id}')`
@@ -90,7 +106,7 @@ describe('pane splits', () => {
     ])
   })
 
-  it('creates every pane exactly once, before anything uses it, for any tree', () => {
+  it('creates every pane exactly once, before anything uses it, for any windows', () => {
     let seed = 1
     const random = () => (seed = (seed * 16807) % 2147483647) / 2147483647
 
@@ -110,13 +126,14 @@ describe('pane splits', () => {
         )
       }
 
-      const tree = build(0)
-      const leaves = (pane: Pane): Pane[] =>
-        pane.items.length ? pane.items.flatMap(leaves) : [pane]
-      const script = generate(tree)
+      const windows = Array.from({ length: 1 + Math.floor(random() * 3) }, (_, i) =>
+        window(i, `w${i}`, build(0))
+      )
+      const allLeaves = windows.flatMap((w) => leaves(w.rootPane))
+      const script = generateWindows(windows)
 
       const defined = new Set<string>()
-      for (const line of script.split('\n')) {
+      for (const line of scriptLines(script)) {
         for (const [, used] of line.matchAll(/"\$(PANE\d+)"/g)) {
           expect(defined, `${used} used before it exists`).toContain(used)
         }
@@ -127,14 +144,89 @@ describe('pane splits', () => {
         }
       }
 
-      expect([...defined].sort()).toEqual(
-        leaves(tree)
-          .map((pane) => `PANE${pane.id}`)
-          .sort()
-      )
-      expect(linesWith(script, 'split-window')).toHaveLength(leaves(tree).length - 1)
-      expect(linesWith(script, 'send-keys')).toHaveLength(leaves(tree).length)
+      expect([...defined].sort()).toEqual(allLeaves.map((pane) => `PANE${pane.id}`).sort())
+      expect(linesWith(script, 'new-window')).toHaveLength(windows.length - 1)
+      expect(linesWith(script, 'split-window')).toHaveLength(allLeaves.length - windows.length)
+      expect(linesWith(script, 'send-keys')).toHaveLength(allLeaves.length)
     }
+  })
+})
+
+describe('windows', () => {
+  const editor = window(0, 'editor', split(0, 'horizontal', [leaf(1, 'vim'), leaf(2)]))
+  const server = window(1, 'server', split(3, 'vertical', [leaf(4, 'npm run dev'), leaf(5)]))
+  const logs = window(2, 'logs', leaf(6, 'tail -f app.log'))
+
+  it('names the first window when creating the session', () => {
+    expect(linesWith(generate(leaf(0)), 'new-session')[0]).toContain(
+      `tmux new-session -d -s "$SESSION_NAME" -n 'main' `
+    )
+  })
+
+  it('adds every other window in the background, in order', () => {
+    expect(linesWith(generateWindows([editor, server, logs]), 'new-window')).toEqual([
+      `PANE4=$(tmux new-window -d -t "$SESSION_NAME:" -n 'server' -P -F '#{pane_id}')`,
+      `PANE6=$(tmux new-window -d -t "$SESSION_NAME:" -n 'logs' -P -F '#{pane_id}')`
+    ])
+  })
+
+  it('splits each window right after creating it, within its own panes', () => {
+    const script = generateWindows([editor, server])
+    const lines = scriptLines(script)
+    const index = (text: string) => lines.findIndex((line) => line.includes(text))
+
+    expect(linesWith(script, 'split-window')).toEqual([
+      splitLine('PANE2', '-h', 'PANE1', 50),
+      splitLine('PANE5', '-v', 'PANE4', 50)
+    ])
+    expect(index('new-session')).toBeLessThan(index('PANE2='))
+    expect(index('PANE2=')).toBeLessThan(index('new-window'))
+    expect(index('new-window')).toBeLessThan(index('PANE5='))
+  })
+
+  it('sends commands once every window exists', () => {
+    const lines = scriptLines(generateWindows([editor, server, logs]))
+    const lastCreated = lines.findLastIndex((line) => /^PANE\d+=/.test(line))
+    const firstCommand = lines.findIndex((line) => line.includes('send-keys'))
+
+    expect(firstCommand).toBeGreaterThan(lastCreated)
+    expect(lines.filter((line) => line.includes('send-keys'))).toEqual([
+      `tmux send-keys -t "$PANE1" 'vim' Enter`,
+      `tmux send-keys -t "$PANE4" 'npm run dev' Enter`,
+      `tmux send-keys -t "$PANE6" 'tail -f app.log' Enter`
+    ])
+  })
+
+  it('attaches to the first pane of the first window', () => {
+    expect(linesWith(generateWindows([editor, server]), 'select-pane')).toEqual([
+      'tmux select-pane -t "$PANE1"'
+    ])
+  })
+
+  it('quotes window names, including characters special to the shell or String.replace', () => {
+    const script = generateWindows([window(0, `it's $HOME $' $&`, leaf(0))])
+
+    expect(linesWith(script, 'new-session')[0]).toContain(`-n 'it'\\''s $HOME $'\\'' $&' `)
+  })
+
+  it('keeps window names on one line, so the indented layout cannot change them', () => {
+    expect(
+      linesWith(generateWindows([window(0, 'two\n  lines', leaf(0))]), 'new-session')[0]
+    ).toContain(`-n 'two lines' `)
+  })
+
+  it('falls back to "Window N" for an empty name', () => {
+    expect(
+      linesWith(generateWindows([editor, window(1, '  ', leaf(3))]), 'new-window')[0]
+    ).toContain(`-n 'Window 2'`)
+  })
+
+  it("labels each window's splits when there is more than one window", () => {
+    const script = generateWindows([editor, server])
+
+    expect(script).toContain('# Pane splits of window 1 (editor)')
+    expect(script).toContain('# Pane splits of window 2 (server)')
+    expect(generate(editor.rootPane)).toContain('# Pane splits\n')
   })
 })
 
@@ -176,13 +268,38 @@ describe('script options', () => {
 
     expect(script.startsWith('#!/bin/sh\n')).toBe(true)
     expect(script).toContain('SESSION_NAME="my_session"')
-    expect(script.endsWith('\nattach\n')).toBe(true)
+    expect(script.endsWith('  tmux attach-session -t "=$SESSION_NAME"\nfi\n')).toBe(true)
+    expect(script).toContain('if [ -n "$TMUX" ]; then\n  tmux switch-client -t "=$SESSION_NAME"')
   })
 
-  it('reuses an existing session instead of creating it again', () => {
-    expect(generate(tree)).toContain(
-      'tmux has-session -t "=$SESSION_NAME" 2>/dev/null && { attach; exit 0; }'
-    )
+  it('creates the session and its layout only when it does not exist yet', () => {
+    const script = generate(tree, { mouseInputEnabled: true })
+    const lines = script.split('\n')
+    const ifLine = lines.indexOf('if ! tmux has-session -t "=$SESSION_NAME" 2>/dev/null; then')
+    const fiLine = lines.indexOf('fi')
+    const inside = lines.slice(ifLine + 1, fiLine)
+    const after = lines.slice(fiLine + 1)
+
+    expect(ifLine).toBeGreaterThan(0)
+    expect(inside.filter((line) => line).every((line) => line.startsWith('  '))).toBe(true)
+    for (const text of ['new-session', 'split-window', 'send-keys', 'select-pane']) {
+      expect(
+        inside.some((line) => line.includes(text)),
+        text
+      ).toBe(true)
+      expect(
+        after.some((line) => line.includes(text)),
+        text
+      ).toBe(false)
+    }
+  })
+
+  it('applies the settings on every run, also to an existing session', () => {
+    const lines = generate(tree, { mouseInputEnabled: true }).split('\n')
+    const fiLine = lines.indexOf('fi')
+
+    expect(lines.findIndex((line) => line.includes('status-style'))).toBeGreaterThan(fiLine)
+    expect(lines.findIndex((line) => line.includes('mouse on'))).toBeGreaterThan(fiLine)
   })
 
   it('sets the status bar colors on the session only', () => {
@@ -207,11 +324,9 @@ describe('script options', () => {
       checkTmuxInstall: true
     })
 
-    expect(script.split('\n').filter((line) => line.startsWith('#'))).toEqual(['#!/bin/sh'])
+    expect(scriptLines(script).filter((line) => line.startsWith('#'))).toEqual(['#!/bin/sh'])
     expect(
-      generate(tree)
-        .split('\n')
-        .filter((line) => line.startsWith('# ')).length
+      scriptLines(generate(tree)).filter((line) => line.startsWith('# ')).length
     ).toBeGreaterThan(0)
   })
 })

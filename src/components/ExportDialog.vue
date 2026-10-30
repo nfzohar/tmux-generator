@@ -117,7 +117,7 @@
 <script lang="ts">
 import { defineComponent, type PropType } from 'vue'
 import InputWrapper from './InputWrapper.vue'
-import { generateScript, type Pane } from '../generator'
+import { generateScript, type TmuxWindow } from '../generator'
 
 export default defineComponent({
   name: 'ExportDialog',
@@ -125,8 +125,8 @@ export default defineComponent({
   components: { InputWrapper },
 
   props: {
-    paneTree: {
-      type: Object as PropType<Pane>,
+    windows: {
+      type: Array as PropType<TmuxWindow[]>,
       required: true
     }
   },
@@ -150,7 +150,7 @@ export default defineComponent({
     },
 
     generatedScript(): string {
-      return generateScript(this.paneTree, {
+      return generateScript(this.windows, {
         sessionName: this.tmuxSessionName,
         colors: this.$layout.colors,
         showComments: this.showComments,

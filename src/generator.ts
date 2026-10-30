@@ -7,6 +7,12 @@ export interface Pane {
   items: Pane[]
 }
 
+export interface TmuxWindow {
+  id: number
+  name: string
+  rootPane: Pane
+}
+
 export interface ScriptOptions {
   sessionName: string
   colors: { txt: string; bg: string }
@@ -20,25 +26,28 @@ const blocks = {
     comment: 'Install tmux if missing (ubuntu)',
     code: 'command -v tmux >/dev/null 2>&1 || { sudo apt update && sudo apt install -y tmux; }'
   },
+  create_session: {
+    comment:
+      'Create the session and its layout, unless it already exists (the settings below apply either way)',
+    code: 'if ! tmux has-session -t "=$SESSION_NAME" 2>/dev/null; then'
+  },
   attach_session: {
     comment: 'Attach to the session (switch to it when already inside tmux)',
     code: [
-      'attach() {',
-      '  if [ -n "$TMUX" ]; then',
-      '    tmux switch-client -t "=$SESSION_NAME"',
-      '  else',
-      '    tmux attach-session -t "=$SESSION_NAME"',
-      '  fi',
-      '}'
+      'if [ -n "$TMUX" ]; then',
+      '  tmux switch-client -t "=$SESSION_NAME"',
+      'else',
+      '  tmux attach-session -t "=$SESSION_NAME"',
+      'fi'
     ].join('\n')
-  },
-  reuse_session: {
-    comment: 'Reuse the session if it already exists',
-    code: 'tmux has-session -t "=$SESSION_NAME" 2>/dev/null && { attach; exit 0; }'
   },
   new_session: {
     comment: 'Create the session sized to the current terminal, so splits have room',
-    code: `rootPane=$(tmux new-session -d -s "$SESSION_NAME" -x "$(tput cols 2>/dev/null || echo 200)" -y "$(tput lines 2>/dev/null || echo 50)" -P -F '#{pane_id}')`
+    code: `rootPane=$(tmux new-session -d -s "$SESSION_NAME" -n windowName -x "$(tput cols 2>/dev/null || echo 200)" -y "$(tput lines 2>/dev/null || echo 50)" -P -F '#{pane_id}')`
+  },
+  new_window: {
+    comment: 'Add a window in the background, it gets the session size',
+    code: `rootPane=$(tmux new-window -d -t "$SESSION_NAME:" -n windowName -P -F '#{pane_id}')`
   },
   enable_mouse_controls: {
     comment: 'Enable mouse support',
@@ -55,7 +64,11 @@ type BlockName = keyof typeof blocks
 const splitFlags: Record<string, string> = { horizontal: '-h', vertical: '-v' }
 
 /**
- * Translates the pane tree into a tmux shell script.
+ * Translates the windows and their pane trees into a tmux shell script.
+ *
+ * The first window comes with the session, the others are added in the background so
+ * attaching lands on the first one. Commands are sent once every pane exists. All of that
+ * is skipped when the session already exists, the settings are applied on every run.
  *
  * Every group node occupies one tmux pane. Its first child keeps that pane and each
  * following child is split off the previous one, taking (remaining / (remaining + 1))
@@ -65,11 +78,11 @@ const splitFlags: Record<string, string> = { horizontal: '-h', vertical: '-v' }
  * Shell variables are named after the leaf that ends up in the pane ($PANE3 is "Pane 3"),
  * since a group's pane is inherited by its first leaf.
  */
-export function generateScript(root: Pane, options: ScriptOptions): string {
+export function generateScript(windows: TmuxWindow[], options: ScriptOptions): string {
   const getBlock = (name: BlockName) =>
     options.showComments ? `# ${blocks[name].comment}\n${blocks[name].code}` : blocks[name].code
 
-  const paneSplits: string[] = []
+  let paneSplits: string[] = []
   const paneCommands: string[] = []
 
   const traversePaneTree = (pane: Pane) => {
@@ -97,29 +110,42 @@ export function generateScript(root: Pane, options: ScriptOptions): string {
     pane.items.forEach(traversePaneTree)
   }
 
-  traversePaneTree(root)
-
   const lines = ['#!/bin/sh']
 
   if (options.checkTmuxInstall) {
     lines.push(getBlock('is_tmux_installed_check'))
   }
 
-  lines.push(
-    `SESSION_NAME="${options.sessionName}"`,
-    getBlock('attach_session'),
-    getBlock('reuse_session')
-  )
+  lines.push(`SESSION_NAME="${options.sessionName}"`)
 
-  lines.push(getBlock('new_session').replace('rootPane', paneVar(firstLeaf(root))))
+  const layout: string[] = []
 
-  if (paneSplits.length) {
-    lines.push(section('Pane splits', paneSplits, options.showComments))
-  }
+  windows.forEach((window, index) => {
+    const name = window.name.replace(/\s+/g, ' ').trim() || `Window ${index + 1}`
+
+    layout.push(
+      getBlock(index ? 'new_window' : 'new_session')
+        .replace('rootPane', paneVar(firstLeaf(window.rootPane)))
+        .replace('windowName', () => shellQuote(name))
+    )
+
+    paneSplits = []
+    traversePaneTree(window.rootPane)
+
+    if (paneSplits.length) {
+      const title =
+        windows.length > 1 ? `Pane splits of window ${index + 1} (${name})` : 'Pane splits'
+      layout.push(section(title, paneSplits, options.showComments))
+    }
+  })
 
   if (paneCommands.length) {
-    lines.push(section('Pane commands', paneCommands, options.showComments))
+    layout.push(section('Pane commands', paneCommands, options.showComments))
   }
+
+  layout.push(`tmux select-pane -t "$${paneVar(firstLeaf(windows[0].rootPane))}"`)
+
+  lines.push(`${getBlock('create_session')}\n${indent(layout.join('\n\n'))}\nfi`)
 
   lines.push(
     getBlock('status_bar_colors')
@@ -131,7 +157,7 @@ export function generateScript(root: Pane, options: ScriptOptions): string {
     lines.push(getBlock('enable_mouse_controls'))
   }
 
-  lines.push(`tmux select-pane -t "$${paneVar(firstLeaf(root))}"`, 'attach')
+  lines.push(getBlock('attach_session'))
 
   return lines.join('\n\n') + '\n'
 }
@@ -147,6 +173,10 @@ function buildPaneCommand(pane: Pane): string | null {
   const keys = commandLines.map((line) => `${shellQuote(tmuxEscape(line))} Enter`).join(' ')
 
   return `tmux send-keys -t "$${paneVar(pane)}" ${keys}`
+}
+
+function indent(text: string): string {
+  return text.replace(/^(?=.)/gm, '  ')
 }
 
 function section(title: string, lines: string[], showComments: boolean): string {

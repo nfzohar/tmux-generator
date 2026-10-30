@@ -26,12 +26,12 @@
           <small v-text="'Reset'" />
         </button>
 
-        <export-dialog :pane-tree="$layout.rootPane" />
+        <export-dialog :windows="$layout.windows" />
       </div>
     </div>
 
     <div class="flex gap-1 rounded-lg flex-1 min-h-0 overflow-scroll scrollbar-hide px-3">
-      <preview-pane :pane="$layout.rootPane" />
+      <preview-pane :key="$layout.activeWindowId" :pane="$layout.activeWindow.rootPane" />
     </div>
 
     <status-bar />
@@ -43,8 +43,6 @@ import { defineComponent } from 'vue'
 import StatusBar from './components/StatusBar.vue'
 import PreviewPane from './components/PreviewPane.vue'
 import ExportDialog from './components/ExportDialog.vue'
-
-// TO DO: add multi-window support
 
 export default defineComponent({
   name: 'TmuxLayoutBuilder',

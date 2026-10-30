@@ -3,9 +3,14 @@
 Build a tmux layout visually and export it as a shell script.
 
 Split panes horizontally or vertically (right-click a pane for 3-way splits), type the
-command each pane should run, pick the status bar colors, then export. Running the
-exported script creates the session with that exact layout, starts every command in its
-pane and attaches to it (or reuses the session if it already exists).
+command each pane should run, add more windows from the bottom left (double-click a
+window to rename it, × to close it), pick the status bar colors, then export. Running the
+exported script creates the session with every window in that exact layout, starts every
+command in its pane and attaches to the first window.
+
+If the session already exists, the script leaves its windows and panes alone (so running
+it twice doesn't duplicate anything), but still applies the status bar colors and mouse
+setting before attaching.
 
 The script needs tmux 3.1 or newer (it sizes splits with `split-window -l N%`).
 
@@ -19,7 +24,9 @@ child panes. [`src/generator.ts`](src/generator.ts) walks that tree:
   equal (`67%` then `50%` for three).
 - Children are only split after all their siblings exist, so nested splits divide just
   their own area.
-- `$PANE3` in the script is "Pane 3" in the builder.
+- `$PANE3` in the script is "Pane 3" in the builder, pane numbers are unique across windows.
+- Every window after the first is added with `new-window -d`, so attaching lands on the
+  first one, and commands are sent once every window exists.
 
 ## Development
 

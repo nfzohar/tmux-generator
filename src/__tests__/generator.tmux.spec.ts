@@ -6,7 +6,7 @@ import { chmodSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { generateScript, type Direction, type Pane } from '../generator'
+import { generateScript, type Direction, type Pane, type TmuxWindow } from '../generator'
 
 const tmuxPath = spawnSync('sh', ['-c', 'command -v tmux'], { encoding: 'utf8' }).stdout.trim()
 
@@ -18,6 +18,8 @@ const split = (id: number, direction: Direction, items: Pane[]): Pane => ({
   items
 })
 const leaves = (pane: Pane): Pane[] => (pane.items.length ? pane.items.flatMap(leaves) : [pane])
+const allLeaves = (windows: TmuxWindow[]) => windows.flatMap((window) => leaves(window.rootPane))
+const single = (rootPane: Pane): TmuxWindow[] => [{ id: 0, name: 'main', rootPane }]
 
 interface Rect {
   x: number
@@ -52,11 +54,12 @@ describe.skipIf(!tmuxPath)('generated script in a real tmux server', () => {
   beforeEach(() => {
     dir = mkdtempSync(join(tmpdir(), 'tmux-generator-'))
 
-    // A "tmux" on PATH that talks to a private server, so the user's sessions are untouched
+    // A "tmux" on PATH that talks to a private server without any user config, so the
+    // user's sessions and settings neither affect the tests nor get touched by them
     tmux = join(dir, 'tmux')
     writeFileSync(
       tmux,
-      `#!/bin/sh\nexec ${tmuxPath} -L "tmux-generator-test-${process.pid}" "$@"\n`
+      `#!/bin/sh\nexec ${tmuxPath} -S "${join(dir, 'socket')}" -f /dev/null "$@"\n`
     )
     chmodSync(tmux, 0o755)
 
@@ -80,21 +83,25 @@ describe.skipIf(!tmuxPath)('generated script in a real tmux server', () => {
 
   // Runs the script without the final attach (there is no terminal here) and returns the
   // tmux pane id of every leaf
-  function runScript(tree: Pane): Map<number, string> {
-    const script = generateScript(tree, {
+  function runScript(
+    windows: TmuxWindow[],
+    colors = { txt: '#000000', bg: '#26A269' }
+  ): Map<number, string> {
+    const script = generateScript(windows, {
       sessionName: 'test',
-      colors: { txt: '#000000', bg: '#26A269' },
+      colors,
       showComments: true,
       mouseInputEnabled: true,
       checkTmuxInstall: false
     })
-    expect(script.endsWith('\nattach\n')).toBe(true)
+    const attachAt = script.lastIndexOf('\n# Attach to the session')
+    expect(attachAt).toBeGreaterThan(0)
 
-    const printPaneIds = leaves(tree)
+    const printPaneIds = allLeaves(windows)
       .map((pane) => `echo "${pane.id} $PANE${pane.id}"`)
       .join('\n')
     const path = join(dir, 'script.sh')
-    writeFileSync(path, script.replace(/\nattach\n$/, `\n${printPaneIds}\n`))
+    writeFileSync(path, `${script.slice(0, attachAt)}\n${printPaneIds}\n`)
 
     const output = execFileSync('sh', [path], { env, encoding: 'utf8', stdio: 'pipe' }).trim()
     return new Map(
@@ -106,20 +113,85 @@ describe.skipIf(!tmuxPath)('generated script in a real tmux server', () => {
   }
 
   // Every leaf runs its command and then records the pane it ran in
-  function withMarkers(tree: Pane): Pane {
-    const copy: Pane = structuredClone(tree)
-    for (const pane of leaves(copy)) {
+  function withMarkers(windows: TmuxWindow[]): TmuxWindow[] {
+    const copy: TmuxWindow[] = structuredClone(windows)
+    for (const pane of allLeaves(copy)) {
       const marker = `echo "$TMUX_PANE" > ${join(dir, `ran-${pane.id}`)}`
       pane.command = pane.command ? `${pane.command}\n${marker}` : marker
     }
     return copy
   }
 
-  async function waitForMarkers(tree: Pane) {
-    const markers = leaves(tree).map((pane) => join(dir, `ran-${pane.id}`))
+  async function waitForMarkers(windows: TmuxWindow[]) {
+    const markers = allLeaves(windows).map((pane) => join(dir, `ran-${pane.id}`))
     for (let i = 0; i < 100 && !markers.every((m) => existsSync(m)); i++) {
       await new Promise((resolve) => setTimeout(resolve, 50))
     }
+  }
+
+  // Runs the windows' script and checks every window's name, panes and commands
+  async function expectLayout(windows: TmuxWindow[]) {
+    const paneIds = runScript(withMarkers(windows))
+    await waitForMarkers(windows)
+
+    const tmuxWindows = tmuxOutput(
+      'list-windows',
+      '-t',
+      'test',
+      '-F',
+      '#{window_index}\t#{window_name}\t#{window_width}\t#{window_height}\t#{window_active}'
+    )
+      .split('\n')
+      .map((line) => {
+        const [index, name, width, height, active] = line.split('\t')
+        return { index, name, width: +width, height: +height, active: active === '1' }
+      })
+
+    expect(tmuxWindows.map((w) => w.name)).toEqual(windows.map((w) => w.name))
+    expect(tmuxWindows.map((w) => w.active)).toEqual(windows.map((_, i) => i === 0))
+
+    windows.forEach((window, i) => {
+      const { index, width, height } = tmuxWindows[i]
+      const actual = new Map(
+        tmuxOutput(
+          'list-panes',
+          '-t',
+          `test:${index}`,
+          '-F',
+          '#{pane_id} #{pane_left} #{pane_top} #{pane_width} #{pane_height}'
+        )
+          .split('\n')
+          .map((line) => {
+            const [id, x, y, w, h] = line.split(' ')
+            return [id, { x: +x, y: +y, w: +w, h: +h }]
+          })
+      )
+
+      expect(actual.size, `panes in window ${window.name}`).toBe(leaves(window.rootPane).length)
+
+      for (const [leafId, rect] of expectedRects(window.rootPane)) {
+        const paneId = paneIds.get(leafId)!
+        const pane = actual.get(paneId)
+        // Pane borders take a cell, so allow being off by a couple of cells
+        const expected = {
+          x: rect.x * width,
+          y: rect.y * height,
+          w: rect.w * width,
+          h: rect.h * height
+        }
+
+        expect(pane, `pane for leaf ${leafId} in window ${window.name}`).toBeDefined()
+        for (const key of ['x', 'y', 'w', 'h'] as const) {
+          expect(Math.abs(pane![key] - expected[key]), `leaf ${leafId} ${key}`).toBeLessThanOrEqual(
+            2
+          )
+        }
+        expect(
+          readFileSync(join(dir, `ran-${leafId}`), 'utf8').trim(),
+          `leaf ${leafId} ran in`
+        ).toBe(paneId)
+      }
+    })
   }
 
   const layouts: [string, Pane][] = [
@@ -154,72 +226,43 @@ describe.skipIf(!tmuxPath)('generated script in a real tmux server', () => {
   ]
 
   it.each(layouts)('lays out %s like the builder', async (_, tree) => {
-    const paneIds = runScript(withMarkers(tree))
-    await waitForMarkers(tree)
+    await expectLayout(single(tree))
+  })
 
-    const [width, height] = tmuxOutput(
-      'display-message',
-      '-p',
-      '-t',
-      'test',
-      '#{window_width} #{window_height}'
-    )
-      .split(' ')
-      .map(Number)
-    const actual = new Map(
-      tmuxOutput(
-        'list-panes',
-        '-t',
-        'test',
-        '-F',
-        '#{pane_id} #{pane_left} #{pane_top} #{pane_width} #{pane_height}'
-      )
-        .split('\n')
-        .map((line) => {
-          const [id, x, y, w, h] = line.split(' ')
-          return [id, { x: +x, y: +y, w: +w, h: +h }]
-        })
-    )
-
-    expect(actual.size).toBe(leaves(tree).length)
-
-    for (const [leafId, rect] of expectedRects(tree)) {
-      const paneId = paneIds.get(leafId)!
-      const pane = actual.get(paneId)
-      // Pane borders take a cell, so allow being off by a couple of cells
-      const expected = {
-        x: rect.x * width,
-        y: rect.y * height,
-        w: rect.w * width,
-        h: rect.h * height
-      }
-
-      expect(pane, `pane for leaf ${leafId}`).toBeDefined()
-      for (const key of ['x', 'y', 'w', 'h'] as const) {
-        expect(Math.abs(pane![key] - expected[key]), `leaf ${leafId} ${key}`).toBeLessThanOrEqual(2)
-      }
-      expect(readFileSync(join(dir, `ran-${leafId}`), 'utf8').trim(), `leaf ${leafId} ran in`).toBe(
-        paneId
-      )
-    }
+  it('creates every window, in order, with its own layout and commands', async () => {
+    await expectLayout([
+      {
+        id: 0,
+        name: 'editor',
+        rootPane: split(0, 'horizontal', [leaf(1), split(2, 'vertical', [leaf(3), leaf(4)])])
+      },
+      {
+        id: 1,
+        name: "it's a server",
+        rootPane: split(5, 'vertical', [leaf(6), leaf(7), leaf(8)])
+      },
+      { id: 2, name: 'logs', rootPane: leaf(9) }
+    ])
   })
 
   it('types commands exactly as written', async () => {
     const out = join(dir, 'out')
-    const tree = split(0, 'horizontal', [
-      leaf(1, `printf '%s|' "it's \\$HOME" "a\\"b" > ${out}; echo done;`),
-      leaf(2, `echo first > ${out}-2\n\necho second >> ${out}-2`)
-    ])
+    const windows = single(
+      split(0, 'horizontal', [
+        leaf(1, `printf '%s|' "it's \\$HOME" "a\\"b" > ${out}; echo done;`),
+        leaf(2, `echo first > ${out}-2\n\necho second >> ${out}-2`)
+      ])
+    )
 
-    runScript(withMarkers(tree))
-    await waitForMarkers(tree)
+    runScript(withMarkers(windows))
+    await waitForMarkers(windows)
 
     expect(readFileSync(out, 'utf8')).toBe(`it's $HOME|a"b|`)
     expect(readFileSync(`${out}-2`, 'utf8')).toBe('first\nsecond\n')
   })
 
   it('applies the status bar colors and mouse setting to the session', () => {
-    runScript(leaf(0))
+    runScript(single(leaf(0)))
 
     expect(tmuxOutput('show-options', '-t', 'test', '-v', 'status-style')).toBe(
       'fg=#000000,bg=#26A269'
@@ -227,12 +270,27 @@ describe.skipIf(!tmuxPath)('generated script in a real tmux server', () => {
     expect(tmuxOutput('show-options', '-t', 'test', '-v', 'mouse')).toBe('on')
   })
 
-  it('reuses the session when run again instead of creating panes twice', () => {
-    const tree = split(0, 'horizontal', [leaf(1), leaf(2)])
-    runScript(tree)
-    runScript(tree)
+  it('reuses the session when run again instead of creating windows or panes twice', () => {
+    const windows: TmuxWindow[] = [
+      { id: 0, name: 'one', rootPane: split(0, 'horizontal', [leaf(1), leaf(2)]) },
+      { id: 1, name: 'two', rootPane: leaf(3) }
+    ]
+    runScript(windows)
+    runScript(windows)
 
     expect(tmuxOutput('list-sessions', '-F', '#{session_name}')).toBe('test')
-    expect(tmuxOutput('list-panes', '-t', 'test', '-F', '#{pane_id}').split('\n')).toHaveLength(2)
+    expect(tmuxOutput('list-windows', '-t', 'test', '-F', '#{window_name}')).toBe('one\ntwo')
+    expect(
+      tmuxOutput('list-panes', '-s', '-t', 'test', '-F', '#{pane_id}').split('\n')
+    ).toHaveLength(3)
+  })
+
+  it('applies changed status bar colors to a session that already exists', () => {
+    runScript(single(leaf(0)), { txt: '#000000', bg: '#26A269' })
+    runScript(single(leaf(0)), { txt: '#ffffff', bg: '#3355ff' })
+
+    expect(tmuxOutput('show-options', '-t', 'test', '-v', 'status-style')).toBe(
+      'fg=#ffffff,bg=#3355ff'
+    )
   })
 })

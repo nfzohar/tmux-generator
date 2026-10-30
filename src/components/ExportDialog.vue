@@ -114,18 +114,19 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent, type PropType } from 'vue'
 import InputWrapper from './InputWrapper.vue'
-import { generateScript } from '../generator'
+import { generateScript, type Pane } from '../generator'
 
-export default {
+export default defineComponent({
   name: 'ExportDialog',
 
   components: { InputWrapper },
 
   props: {
     paneTree: {
-      type: Object,
+      type: Object as PropType<Pane>,
       required: true
     }
   },
@@ -143,12 +144,12 @@ export default {
   },
 
   computed: {
-    tmuxSessionName() {
+    tmuxSessionName(): string {
       // tmux rejects "." and ":" in session names, keep it shell-safe too
       return this.sessionName.trim().replace(/[^\w-]+/g, '_') || this.generatedSessionName
     },
 
-    generatedScript() {
+    generatedScript(): string {
       return generateScript(this.paneTree, {
         sessionName: this.tmuxSessionName,
         colors: this.$layout.colors,
@@ -181,5 +182,5 @@ export default {
       setTimeout(() => (this.copied = false), 1500)
     }
   }
-}
+})
 </script>

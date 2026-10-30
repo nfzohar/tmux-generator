@@ -42,17 +42,13 @@
       :value="pane.command"
       class="block w-full h-full px-4 py-2 focus:outline-none rounded-b-lg border-t dark:border-none resize-none bg-transparent"
       :placeholder="'Enter command...'"
-      @input="$layout.setCommand(pane.id, $event.target.value)"
+      @input="setCommand"
       @focus="startEditing"
       @blur="isFocused = false"
       @change="$layout.pushHistory(snapshotBeforeEdit)"
     />
 
-    <context-menu
-      ref="menu"
-      :items="actions"
-      @select="(action) => splitIntoPanes(...action.split)"
-    />
+    <context-menu ref="menu" :items="actions" @select="onMenuSelect" />
   </div>
 
   <div
@@ -64,17 +60,19 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent, type PropType } from 'vue'
 import ContextMenu from './ContextMenu.vue'
+import type { Direction, Pane } from '../generator'
 
-export default {
+export default defineComponent({
   name: 'PreviewPane',
 
   components: { ContextMenu },
 
   props: {
     pane: {
-      type: Object,
+      type: Object as PropType<Pane>,
       required: true
     }
   },
@@ -82,28 +80,37 @@ export default {
   data() {
     return {
       isFocused: false,
-      snapshotBeforeEdit: null,
+      snapshotBeforeEdit: '',
       actions: [
-        { label: 'Split in 2 horizontally', split: ['horizontal', 2] },
-        { label: 'Split in 2 vertically', split: ['vertical', 2] },
-        { label: 'Split in 3 horizontally', split: ['horizontal', 3] },
-        { label: 'Split in 3 vertically', split: ['vertical', 3] }
-      ]
+        { label: 'Split in 2 horizontally', direction: 'horizontal', paneCount: 2 },
+        { label: 'Split in 2 vertically', direction: 'vertical', paneCount: 2 },
+        { label: 'Split in 3 horizontally', direction: 'horizontal', paneCount: 3 },
+        { label: 'Split in 3 vertically', direction: 'vertical', paneCount: 3 }
+      ] as { label: string; direction: Direction; paneCount: number }[]
     }
   },
 
   computed: {
-    isPaneGroup() {
+    isPaneGroup(): boolean {
       return this.pane.items?.length > 0
     },
-    focusColor() {
+    focusColor(): string {
       return this.$layout.colors.bg
     }
   },
 
   methods: {
-    splitIntoPanes(direction, paneCount = 2) {
+    splitIntoPanes(direction: Direction, paneCount = 2) {
       this.$layout.splitPane(this.pane.id, direction, paneCount)
+    },
+
+    onMenuSelect(index: number) {
+      const { direction, paneCount } = this.actions[index]
+      this.splitIntoPanes(direction, paneCount)
+    },
+
+    setCommand(event: Event) {
+      this.$layout.setCommand(this.pane.id, (event.target as HTMLTextAreaElement).value)
     },
 
     startEditing() {
@@ -112,9 +119,9 @@ export default {
       this.snapshotBeforeEdit = this.$layout.snapshot()
     },
 
-    openContextMenu(e) {
-      this.$refs.menu.open(e)
+    openContextMenu(e: MouseEvent) {
+      ;(this.$refs.menu as InstanceType<typeof ContextMenu>).open(e)
     }
   }
-}
+})
 </script>

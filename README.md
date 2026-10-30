@@ -23,9 +23,17 @@ child panes. [`src/generator.ts`](src/generator.ts) walks that tree:
 
 ## Development
 
+Needs Node 22.12+ (`nvm use` picks it up from `.nvmrc`) and Yarn 1, which Corepack
+selects automatically from `packageManager`.
+
 ```
 yarn install
-yarn dev        # dev server with hot reload
-yarn build      # production build
-yarn lint       # lint and fix files
+yarn dev          # dev server with hot reload
+yarn build        # type-check and production build
+yarn test         # generator tests
+yarn lint         # lint and fix files
 ```
+
+`yarn test` runs two suites in `src/__tests__/`: unit tests of the generated script, and
+a run of generated scripts against a real, private tmux server that checks every pane's
+position, size and command. The tmux suite is skipped when tmux is not installed.

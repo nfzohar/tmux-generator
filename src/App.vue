@@ -38,14 +38,15 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue'
 import StatusBar from './components/StatusBar.vue'
 import PreviewPane from './components/PreviewPane.vue'
 import ExportDialog from './components/ExportDialog.vue'
 
 // TO DO: add multi-window support
 
-export default {
+export default defineComponent({
   name: 'TmuxLayoutBuilder',
 
   components: { StatusBar, PreviewPane, ExportDialog },
@@ -63,7 +64,7 @@ export default {
       }
     }
   }
-}
+})
 </script>
 
 <style>

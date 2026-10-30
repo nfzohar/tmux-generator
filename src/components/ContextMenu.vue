@@ -9,30 +9,34 @@
     >
       <ul class="menu flex flex-col rounded-md shadow-xl overflow-hidden border border-gray-700">
         <li
-          v-for="item in items"
+          v-for="(item, index) in items"
           :key="item.label"
           class="cursor-pointer bg-white dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 p-4 text-sm"
           v-text="item.label"
-          @click="select(item)"
+          @click="select(index)"
         />
       </ul>
     </div>
   </Teleport>
 </template>
 
-<script>
-// Only one context menu may be open at a time, across all panes
-let openMenu = null
+<script lang="ts">
+import { defineComponent, type PropType } from 'vue'
 
-export default {
+// Only one context menu may be open at a time, across all panes
+let openMenu: { hide: () => void } | null = null
+
+export default defineComponent({
   name: 'ContextMenu',
 
-  emits: ['select'],
+  emits: {
+    // Index of the selected item
+    select: (index: number) => Number.isInteger(index)
+  },
 
   props: {
-    // [{ label: String, ...anything passed back on select }]
     items: {
-      type: Array,
+      type: Array as PropType<{ label: string }[]>,
       required: false,
       default: () => []
     }
@@ -54,7 +58,7 @@ export default {
   },
 
   methods: {
-    open(e) {
+    open(e: MouseEvent) {
       e.preventDefault()
 
       if (openMenu && openMenu !== this) {
@@ -64,7 +68,7 @@ export default {
       this.visible = true
 
       this.$nextTick(() => {
-        const menu = this.$refs.menu
+        const menu = this.$refs.menu as HTMLElement | undefined
 
         if (!menu) {
           return
@@ -89,10 +93,10 @@ export default {
       this.visible = false
     },
 
-    select(item) {
-      this.$emit('select', item)
+    select(index: number) {
+      this.$emit('select', index)
       this.hide()
     }
   }
-}
+})
 </script>

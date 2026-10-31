@@ -1,3 +1,5 @@
+import { label } from './labels'
+
 export type Direction = '' | 'horizontal' | 'vertical'
 
 export interface Pane {
@@ -138,7 +140,8 @@ export function generateScript(windows: TmuxWindow[], options: ScriptOptions): s
   const layout: string[] = []
 
   windows.forEach((window, index) => {
-    const name = window.name.replace(/\s+/g, ' ').trim() || `Window ${index + 1}`
+    const name =
+      window.name.replace(/\s+/g, ' ').trim() || label('window-default-name', { number: index + 1 })
 
     layout.push(
       getBlock(index ? 'new_window' : 'new_session')

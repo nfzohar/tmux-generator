@@ -6,26 +6,26 @@
       class="flex flex-row gap-2 items-center justify-between p-3 w-full bg-white ring-1 ring-gray-200 dark:bg-slate-800 dark:ring-0"
     >
       <h1 class="block w-full min-w-0 truncate">
-        <strong>Tmux Builder</strong> | <small>Build & export your new TMUX layout</small>
+        <strong v-text="$label('app-title')" /> | <small v-text="$label('app-subtitle')" />
       </h1>
 
       <div class="flex items-center gap-2">
         <button
           class="flex items-center gap-2 py-1 px-2 bg-white text-gray-700 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 hover:text-blue-700 dark:bg-gray-700 dark:text-white dark:ring-0 dark:hover:bg-blue-800 dark:hover:text-white transition-colors rounded-md font-semibold cursor-pointer"
-          :title="'Undo last change'"
+          :title="$label('undo-title')"
           @click="undoLastChange()"
         >
           <i class="fa fa-undo" />
-          <small v-text="'Undo'" />
+          <small v-text="$label('undo')" />
         </button>
 
         <button
           class="flex items-center gap-2 py-1 px-3 bg-white text-gray-700 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 hover:text-blue-700 dark:bg-gray-700 dark:text-white dark:ring-0 dark:hover:bg-blue-800 dark:hover:text-white transition-colors rounded-md font-semibold cursor-pointer"
-          :title="'Do full reset'"
+          :title="$label('reset-title')"
           @click.prevent="confirmingReset = true"
         >
           <i class="fa fa-delete-left" />
-          <small v-text="'Reset'" />
+          <small v-text="$label('reset')" />
         </button>
 
         <export-dialog :windows="$layout.windows" />
@@ -40,11 +40,11 @@
 
     <confirm-dialog
       :show="confirmingReset"
-      :title="'Reset the layout?'"
-      :message="'This deletes every window, pane and command and resets the status bar colors. It can\'t be undone.'"
-      :confirm-label="'Reset'"
+      :title="$label('reset-confirm-title')"
+      :message="$label('reset-confirm-message')"
+      :confirm-label="$label('reset')"
       :confirm-icon="'fa-delete-left'"
-      :cancel-label="'Cancel'"
+      :cancel-label="$label('dialog-cancel')"
       danger
       @confirm="reset()"
       @cancel="confirmingReset = false"
@@ -52,8 +52,8 @@
 
     <confirm-dialog
       :show="nothingToUndo"
-      :title="'Nothing to undo'"
-      :message="'There are no more changes to undo.'"
+      :title="$label('undo-nothing-title')"
+      :message="$label('undo-nothing-message')"
       @confirm="nothingToUndo = false"
       @cancel="nothingToUndo = false"
     />

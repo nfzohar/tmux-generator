@@ -5,7 +5,7 @@
     <div class="flex items-center gap-2 min-w-0">
       <button
         class="flex items-center shrink-0 p-2 bg-white text-gray-700 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 hover:text-blue-700 dark:bg-gray-700 dark:text-white dark:ring-0 dark:hover:bg-blue-800 dark:hover:text-white transition-colors rounded-md cursor-pointer"
-        :title="'Add new window'"
+        :title="$label('window-add')"
         @click="$layout.addWindow()"
       >
         <i class="fa fa-plus" />
@@ -19,7 +19,7 @@
             :value="window.name"
             class="py-1 px-2 w-36 rounded-md font-semibold bg-white dark:bg-slate-700 border border-green-700 focus:outline-none"
             maxlength="40"
-            :aria-label="`Window ${index + 1} name`"
+            :aria-label="$label('window-name-input', { number: index + 1 })"
             @input="rename"
             @keydown.enter="finishRenaming"
             @keydown.esc="cancelRenaming"
@@ -38,7 +38,7 @@
             <button
               class="flex items-center gap-1.5 py-1 pl-2 cursor-pointer"
               :class="$layout.windows.length > 1 ? 'pr-1' : 'pr-2'"
-              :title="'Click to open, double-click to rename'"
+              :title="$label('window-tab-title')"
               @click="$layout.selectWindow(window.id)"
               @dblclick="startRenaming(window)"
             >
@@ -48,8 +48,8 @@
             <button
               v-if="$layout.windows.length > 1"
               class="flex items-center py-1 pl-1 pr-2 cursor-pointer opacity-60 hover:opacity-100"
-              :title="`Close ${window.name}`"
-              :aria-label="`Close ${window.name}`"
+              :title="$label('window-close', { name: window.name })"
+              :aria-label="$label('window-close', { name: window.name })"
               @click="$layout.removeWindow(window.id)"
             >
               <i class="fa fa-xmark" />
@@ -61,8 +61,8 @@
 
     <div class="flex items-center gap-2 shrink-0">
       <div class="flex items-center gap-2 mx-2">
-        <div class="flex items-center gap-1" :title="'Select status bar foreground color'">
-          <label :for="'foreground_color_select'" v-text="'Text'" />
+        <div class="flex items-center gap-1" :title="$label('status-text-color-title')">
+          <label :for="'foreground_color_select'" v-text="$label('status-text-color')" />
           <input
             id="foreground_color_select"
             v-model="$layout.colors.txt"
@@ -70,8 +70,8 @@
             type="color"
           />
         </div>
-        <div class="flex items-center gap-1" :title="'Select status bar background color'">
-          <label :for="'background_color_select'" v-text="'Background'" />
+        <div class="flex items-center gap-1" :title="$label('status-background-color-title')">
+          <label :for="'background_color_select'" v-text="$label('status-background-color')" />
           <input
             id="background_color_select"
             v-model="$layout.colors.bg"
@@ -84,7 +84,7 @@
       <span
         class="py-1 px-2 rounded-md border border-gray-300 dark:border-gray-800"
         :style="{ backgroundColor: $layout.colors.bg, color: $layout.colors.txt }"
-        :title="'Status bar custom color preview'"
+        :title="$label('status-preview-title')"
         v-text="timestamp"
       />
 

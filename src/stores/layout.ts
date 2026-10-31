@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import type { Direction, Pane, TmuxWindow } from '../generator'
+import { label } from '../labels'
 
 const newPane = (id: number): Pane => ({
   id,
@@ -7,6 +8,8 @@ const newPane = (id: number): Pane => ({
   command: '',
   direction: ''
 })
+
+const defaultWindowName = (number: number) => label('window-default-name', { number })
 
 const newWindow = (id: number, name: string, rootPaneId: number): TmuxWindow => ({
   id,
@@ -40,7 +43,7 @@ export const layout = defineStore('layout', {
     nextPaneId: 1,
     nextWindowId: 1,
     colors: defaultColors(),
-    windows: [newWindow(0, 'Window 1', 0)],
+    windows: [newWindow(0, defaultWindowName(1), 0)],
     activeWindowId: 0,
     // Serialized snapshots of the layout (see snapshot()), newest last
     history: [] as string[]
@@ -125,11 +128,11 @@ export const layout = defineStore('layout', {
       // Next unused "Window N", closed windows can leave a number taken further down
       const names = new Set(this.windows.map((window) => window.name))
       let number = this.windows.length + 1
-      while (names.has(`Window ${number}`)) {
+      while (names.has(defaultWindowName(number))) {
         number++
       }
 
-      const window = newWindow(this.nextWindowId++, `Window ${number}`, this.nextPaneId++)
+      const window = newWindow(this.nextWindowId++, defaultWindowName(number), this.nextPaneId++)
 
       this.windows.push(window)
       this.activeWindowId = window.id
@@ -166,7 +169,7 @@ export const layout = defineStore('layout', {
     resetBuilder() {
       this.nextPaneId = 1
       this.nextWindowId = 1
-      this.windows = [newWindow(0, 'Window 1', 0)]
+      this.windows = [newWindow(0, defaultWindowName(1), 0)]
       this.activeWindowId = 0
       this.colors = defaultColors()
       this.history = []

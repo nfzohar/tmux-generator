@@ -10,30 +10,33 @@
           class="w-3 h-3 shrink-0 rounded-full bg-gray-500"
           :style="isFocused ? { backgroundColor: focusColor } : {}"
         />
-        <span class="text-sm font-medium whitespace-nowrap" :title="`Pane ${pane.id}`">
-          <span class="hidden @[10rem]:inline" v-text="'Pane '" />{{ pane.id }}
+        <span
+          class="text-sm font-medium whitespace-nowrap"
+          :title="$label('pane-title', { id: pane.id })"
+        >
+          <span class="hidden @[10rem]:inline" v-text="`${$label('pane')} `" />{{ pane.id }}
         </span>
       </div>
 
       <div class="flex items-center gap-1 p-2 shrink-0">
         <button
           class="flex items-center gap-1 p-1 transition-colors rounded-md font-semibold cursor-pointer hover:text-blue-500 text-md"
-          :title="'Split this pane horizontally'"
+          :title="$label('pane-split-horizontally-title')"
           tabindex="-1"
           @click="splitIntoPanes('horizontal')"
         >
           <i class="fa fa-arrows-left-right" />
-          <small class="hidden @sm:inline" v-text="'Split horizontally'" />
+          <small class="hidden @sm:inline" v-text="$label('pane-split-horizontally')" />
         </button>
 
         <button
           class="flex items-center gap-1 p-1 transition-colors rounded-md font-semibold cursor-pointer hover:text-blue-500 text-md"
-          :title="'Split this pane vertically'"
+          :title="$label('pane-split-vertically-title')"
           tabindex="-1"
           @click="splitIntoPanes('vertical')"
         >
           <i class="fa fa-arrows-up-down" />
-          <small class="hidden @sm:inline" v-text="'Split vertically'" />
+          <small class="hidden @sm:inline" v-text="$label('pane-split-vertically')" />
         </button>
       </div>
     </div>
@@ -41,7 +44,7 @@
     <textarea
       :value="pane.command"
       class="block w-full h-full px-4 py-2 focus:outline-none rounded-b-lg border-t border-gray-200 dark:border-none resize-none bg-transparent"
-      :placeholder="'Enter command...'"
+      :placeholder="$label('pane-command-placeholder')"
       @input="setCommand"
       @focus="startEditing"
       @blur="isFocused = false"
@@ -80,17 +83,21 @@ export default defineComponent({
   data() {
     return {
       isFocused: false,
-      snapshotBeforeEdit: '',
-      actions: [
-        { label: 'Split in 2 horizontally', direction: 'horizontal', paneCount: 2 },
-        { label: 'Split in 2 vertically', direction: 'vertical', paneCount: 2 },
-        { label: 'Split in 3 horizontally', direction: 'horizontal', paneCount: 3 },
-        { label: 'Split in 3 vertically', direction: 'vertical', paneCount: 3 }
-      ] as { label: string; direction: Direction; paneCount: number }[]
+      snapshotBeforeEdit: ''
     }
   },
 
   computed: {
+    actions(): { label: string; direction: Direction; paneCount: number }[] {
+      return [2, 3].flatMap((paneCount) =>
+        (['horizontal', 'vertical'] as const).map((direction) => ({
+          label: this.$label(`pane-split-in-${direction}ly`, { count: paneCount }),
+          direction,
+          paneCount
+        }))
+      )
+    },
+
     isPaneGroup(): boolean {
       return this.pane.items?.length > 0
     },

@@ -129,6 +129,7 @@ Built with Vue 3, Pinia, Tailwind CSS 4 and Vite.
 | --- | --- |
 | `src/generator.ts` | Turns windows and pane trees into the shell script |
 | `src/stores/layout.ts` | Windows, pane trees, colors and undo history |
+| `src/labels.ts` | Every text shown in the UI, by slug, used as `$label('slug')` in templates |
 | `src/components/PreviewPane.vue` | A pane in the builder, drawn recursively for splits |
 | `src/components/StatusBar.vue` | Window tabs and status bar colors |
 | `src/components/ExportDialog.vue` | Export options, script preview, copy and download |

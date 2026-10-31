@@ -1,11 +1,11 @@
 <template>
   <button
     class="flex items-center bg-green-700 text-white gap-2 py-1 px-3 hover:bg-green-800 transition-colors rounded-md font-semibold cursor-pointer"
-    :title="'Export layout as program'"
+    :title="$label('export-title')"
     @click.prevent="show = !show"
   >
     <i class="fa fa-file" />
-    <small v-text="'Export'" />
+    <small v-text="$label('export')" />
   </button>
 
   <base-dialog :show="show" :panel-class="'max-w-6xl h-[80vh]'" @close="show = false">
@@ -13,11 +13,11 @@
       <div class="flex flex-col gap-3 w-64 shrink-0">
         <h3
           class="text-lg text-center font-semibold text-gray-900 dark:text-white"
-          v-text="'Export TMUX Configuration'"
+          v-text="$label('export-heading')"
         />
 
         <div class="flex flex-col gap-5 bg-gray-100 dark:bg-gray-800 rounded-md p-3 my-1">
-          <input-wrapper :label="'Session Name'" :name="'session-name'">
+          <input-wrapper :label="$label('export-session-name')" :name="'session-name'">
             <input
               v-model="sessionName"
               id="session-name"
@@ -28,10 +28,10 @@
           </input-wrapper>
 
           <input-wrapper
-            :label="`Add 'Is TMUX installed' check`"
+            :label="$label('export-install-check')"
             :label-position="'bottom'"
             :name="'tmux-installed-check'"
-            :title="`Check if tmux is installed on your system and install it if missing.`"
+            :title="$label('export-install-check-title')"
             type="checkbox"
           >
             <input
@@ -43,10 +43,10 @@
           </input-wrapper>
 
           <input-wrapper
-            :label="'Enable mouse controls'"
+            :label="$label('export-mouse')"
             :label-position="'bottom'"
             :name="'mouse-enabled'"
-            :title="`Enable managing the layout with mouse input.`"
+            :title="$label('export-mouse-title')"
             type="checkbox"
           >
             <input
@@ -58,10 +58,10 @@
           </input-wrapper>
 
           <input-wrapper
-            :label="'Show comments'"
+            :label="$label('export-comments')"
             :label-position="'bottom'"
             :name="'show-comments'"
-            :title="`Toggle comments for script commands.`"
+            :title="$label('export-comments-title')"
             type="checkbox"
           >
             <input
@@ -78,7 +78,7 @@
           @click="downloadScriptAsAFile()"
         >
           <i class="fa fa-download pr-2" />
-          <small v-text="'Download'" />
+          <small v-text="$label('export-download')" />
         </button>
       </div>
 
@@ -86,14 +86,14 @@
         class="flex flex-col bg-gray-50 dark:bg-black border border-gray-200 dark:border-gray-700 overflow-hidden rounded-lg p-4 h-full flex-1 min-w-0"
       >
         <div class="flex items-center justify-between">
-          <span class="font-medium" v-text="'Generated Script'" />
+          <span class="font-medium" v-text="$label('export-script')" />
 
           <button
             class="flex items-center gap-2 p-2 bg-white text-gray-700 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 hover:text-blue-700 dark:bg-gray-700 dark:text-white dark:ring-0 dark:hover:bg-blue-800 dark:hover:text-white transition-colors rounded-md font-semibold cursor-pointer"
             @click="copyScriptToClipboard()"
           >
             <i class="fa" :class="copied ? 'fa-check' : 'fa-copy'" />
-            <small v-text="copied ? 'Copied' : 'Copy'" />
+            <small v-text="$label(copied ? 'export-copied' : 'export-copy')" />
           </button>
         </div>
 

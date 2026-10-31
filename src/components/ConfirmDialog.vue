@@ -31,6 +31,7 @@
 <script lang="ts">
 import { defineComponent } from 'vue'
 import BaseDialog from './BaseDialog.vue'
+import { label } from '../labels'
 
 // A message with a confirm button, and a cancel button when cancelLabel is set
 export default defineComponent({
@@ -53,7 +54,7 @@ export default defineComponent({
     },
     confirmLabel: {
       type: String,
-      default: 'OK'
+      default: () => label('dialog-ok')
     },
     confirmIcon: {
       type: String,

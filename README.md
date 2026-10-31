@@ -27,7 +27,7 @@ header switches between them.
 | Option | What it does |
 | --- | --- |
 | Session name | Name of the tmux session. Spaces and characters tmux doesn't allow become `_`. Left empty, a random `session_…` name is used. |
-| Is TMUX installed check | Installs tmux with `apt` (using `sudo`) when it's missing. Ubuntu/Debian only. |
+| Is TMUX installed check | Installs tmux when it's missing, with `apt-get`, `dnf` or `pacman` (using `sudo`) or `brew`. If that isn't possible, the script stops with a message instead of running without tmux. |
 | Enable mouse controls | Turns on `mouse` for the session. |
 | Show comments | Explains each part of the script in comments. |
 

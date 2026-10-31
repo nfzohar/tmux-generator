@@ -23,8 +23,25 @@ export interface ScriptOptions {
 
 const blocks = {
   is_tmux_installed_check: {
-    comment: 'Install tmux if missing (ubuntu)',
-    code: 'command -v tmux >/dev/null 2>&1 || { sudo apt update && sudo apt install -y tmux; }'
+    comment: 'Install tmux if it is missing, and stop if that is not possible',
+    code: [
+      'if ! command -v tmux >/dev/null 2>&1; then',
+      '  if command -v apt-get >/dev/null 2>&1; then',
+      '    sudo apt-get update && sudo apt-get install -y tmux',
+      '  elif command -v dnf >/dev/null 2>&1; then',
+      '    sudo dnf install -y tmux',
+      '  elif command -v pacman >/dev/null 2>&1; then',
+      '    sudo pacman -S --noconfirm tmux',
+      '  elif command -v brew >/dev/null 2>&1; then',
+      '    brew install tmux',
+      '  fi',
+      '',
+      '  command -v tmux >/dev/null 2>&1 || {',
+      "    echo 'tmux is not installed and could not be installed automatically, install it and run this script again' >&2",
+      '    exit 1',
+      '  }',
+      'fi'
+    ].join('\n')
   },
   create_session: {
     comment:

@@ -24,7 +24,7 @@
         <button
           class="flex items-center gap-2 py-1 px-3 bg-white text-gray-700 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 hover:text-blue-700 dark:bg-gray-700 dark:text-white dark:ring-0 dark:hover:bg-blue-800 dark:hover:text-white transition-colors rounded-md font-semibold cursor-pointer"
           :title="'Do full reset'"
-          @click.prevent="reset"
+          @click.prevent="confirmingReset = true"
         >
           <i class="fa fa-delete-left" />
           <small v-text="'Reset'" />
@@ -39,6 +39,26 @@
     </div>
 
     <status-bar />
+
+    <confirm-dialog
+      :show="confirmingReset"
+      :title="'Reset the layout?'"
+      :message="'This deletes every window, pane and command and resets the status bar colors. It can\'t be undone.'"
+      :confirm-label="'Reset'"
+      :confirm-icon="'fa-delete-left'"
+      :cancel-label="'Cancel'"
+      danger
+      @confirm="reset()"
+      @cancel="confirmingReset = false"
+    />
+
+    <confirm-dialog
+      :show="nothingToUndo"
+      :title="'Nothing to undo'"
+      :message="'There are no more changes to undo.'"
+      @confirm="nothingToUndo = false"
+      @cancel="nothingToUndo = false"
+    />
   </div>
 </template>
 
@@ -46,25 +66,32 @@
 import { defineComponent } from 'vue'
 import StatusBar from './components/StatusBar.vue'
 import PreviewPane from './components/PreviewPane.vue'
+import ConfirmDialog from './components/ConfirmDialog.vue'
 import ExportDialog from './components/ExportDialog.vue'
 import ThemeToggle from './components/ThemeToggle.vue'
 
 export default defineComponent({
   name: 'TmuxLayoutBuilder',
 
-  components: { StatusBar, PreviewPane, ExportDialog, ThemeToggle },
+  components: { StatusBar, PreviewPane, ConfirmDialog, ExportDialog, ThemeToggle },
+
+  data() {
+    return {
+      confirmingReset: false,
+      nothingToUndo: false
+    }
+  },
 
   methods: {
     undoLastChange() {
       if (!this.$layout.undo()) {
-        alert('No more history remaining.')
+        this.nothingToUndo = true
       }
     },
 
     reset() {
-      if (confirm('Are you sure? This will delete the current layout.')) {
-        this.$layout.resetBuilder()
-      }
+      this.$layout.resetBuilder()
+      this.confirmingReset = false
     }
   }
 })

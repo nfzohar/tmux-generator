@@ -2,7 +2,15 @@
 // end up where the builder draws them, with each command running in its own pane.
 // Skipped when tmux is not installed.
 import { execFileSync, spawnSync } from 'node:child_process'
-import { chmodSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import {
+  chmodSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync
+} from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
@@ -292,5 +300,117 @@ describe.skipIf(!tmuxPath)('generated script in a real tmux server', () => {
     expect(tmuxOutput('show-options', '-t', 'test', '-v', 'status-style')).toBe(
       'fg=#ffffff,bg=#3355ff'
     )
+  })
+})
+
+describe.skipIf(!tmuxPath)('tmux install check in the generated script', () => {
+  let dir: string
+  let log: string
+
+  const script = () =>
+    generateScript(single(leaf(0)), {
+      sessionName: 'test',
+      colors: { txt: '#000000', bg: '#26A269' },
+      showComments: true,
+      mouseInputEnabled: false,
+      checkTmuxInstall: true
+    })
+
+  const executable = (path: string, body: string) => {
+    writeFileSync(path, `#!/bin/sh\n${body}\n`)
+    chmodSync(path, 0o755)
+  }
+
+  // A tmux on PATH that talks to a private server
+  const fakeTmux = () => `exec ${tmuxPath} -S "${join(dir, 'socket')}" -f /dev/null "$@"`
+
+  // Package manager stub that logs its call, and "installs" tmux when asked for it
+  const packageManager = (name: string, exitCode = 0) =>
+    executable(
+      join(dir, 'bin', name),
+      [
+        `echo "${name} $*" >> "${log}"`,
+        `[ ${exitCode} -eq 0 ] || exit ${exitCode}`,
+        `case "$*" in *tmux) /bin/cp "${join(dir, 'tmux')}" "${join(dir, 'installed', 'tmux')}" ;; esac`
+      ].join('\n')
+    )
+
+  // Runs the script without its final attach, with only the stubs on PATH
+  const run = () => {
+    const generated = script()
+    const path = join(dir, 'script.sh')
+    writeFileSync(
+      path,
+      generated.slice(0, generated.lastIndexOf('\n# Attach to the session')) + '\n'
+    )
+    return spawnSync('/bin/sh', [path], {
+      encoding: 'utf8',
+      env: { HOME: dir, PATH: `${join(dir, 'bin')}:${join(dir, 'installed')}`, SHELL: '/bin/sh' }
+    })
+  }
+
+  const calls = () => (existsSync(log) ? readFileSync(log, 'utf8').trim().split('\n') : [])
+
+  beforeEach(() => {
+    dir = mkdtempSync(join(tmpdir(), 'tmux-generator-'))
+    log = join(dir, 'calls.log')
+    for (const sub of ['bin', 'installed']) mkdirSync(join(dir, sub))
+    executable(join(dir, 'tmux'), fakeTmux())
+    executable(join(dir, 'bin', 'sudo'), `echo "sudo $*" >> "${log}"\nexec "$@"`)
+  })
+
+  afterEach(() => {
+    spawnSync(tmuxPath, ['-S', join(dir, 'socket'), 'kill-server'])
+    rmSync(dir, { recursive: true, force: true })
+  })
+
+  it.each([
+    [
+      'apt-get',
+      [
+        'sudo apt-get update',
+        'apt-get update',
+        'sudo apt-get install -y tmux',
+        'apt-get install -y tmux'
+      ]
+    ],
+    ['dnf', ['sudo dnf install -y tmux', 'dnf install -y tmux']],
+    ['pacman', ['sudo pacman -S --noconfirm tmux', 'pacman -S --noconfirm tmux']],
+    ['brew', ['brew install tmux']]
+  ])('installs a missing tmux with %s, then creates the session', (manager, expectedCalls) => {
+    packageManager(manager)
+
+    const result = run()
+
+    expect(result.status, result.stderr).toBe(0)
+    expect(calls()).toEqual(expectedCalls)
+    expect(
+      spawnSync(tmuxPath, ['-S', join(dir, 'socket'), 'list-sessions', '-F', '#{session_name}'], {
+        encoding: 'utf8'
+      }).stdout.trim()
+    ).toBe('test')
+  })
+
+  it('installs nothing when tmux is already there', () => {
+    packageManager('apt-get')
+    executable(join(dir, 'installed', 'tmux'), fakeTmux())
+
+    expect(run().status).toBe(0)
+    expect(calls()).toEqual([])
+  })
+
+  it.each([
+    ['there is no known package manager', () => {}],
+    ['the install fails', () => packageManager('apt-get', 100)]
+  ])('stops with a clear message when %s', (_, setup) => {
+    setup()
+
+    const result = run()
+
+    expect(result.status).toBe(1)
+    expect(result.stderr).toContain(
+      'tmux is not installed and could not be installed automatically'
+    )
+    expect(result.stderr).not.toContain('not found')
   })
 })

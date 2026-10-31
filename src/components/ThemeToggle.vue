@@ -5,7 +5,7 @@
     :aria-label="`Switch to ${next} theme`"
     @click="toggle()"
   >
-    <i class="fa fa-fw" :class="theme === 'dark' ? 'fa-sun' : 'fa-moon'" />
+    <i class="fa fa-fw" :class="theme === 'dark' ? 'fa-moon' : 'fa-sun'" />
   </button>
 </template>
 

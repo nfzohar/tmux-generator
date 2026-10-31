@@ -87,6 +87,8 @@
         :title="'Status bar custom color preview'"
         v-text="timestamp"
       />
+
+      <theme-toggle />
     </div>
   </div>
 </template>
@@ -94,10 +96,13 @@
 <script lang="ts">
 import { defineComponent } from 'vue'
 import format from 'date-fns/format'
+import ThemeToggle from './ThemeToggle.vue'
 import type { TmuxWindow } from '../generator'
 
 export default defineComponent({
   name: 'StatusBar',
+
+  components: { ThemeToggle },
 
   directives: {
     focus: {

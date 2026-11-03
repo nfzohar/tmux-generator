@@ -14,7 +14,15 @@ import {
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { generateScript, type Direction, type Pane, type TmuxWindow } from '../generator'
+import {
+  generateScript,
+  tmuxInstallers,
+  type Colors,
+  type Direction,
+  type Pane,
+  type TmuxInstaller,
+  type TmuxWindow
+} from '../generator'
 
 const tmuxPath = spawnSync('sh', ['-c', 'command -v tmux'], { encoding: 'utf8' }).stdout.trim()
 
@@ -93,14 +101,17 @@ describe.skipIf(!tmuxPath)('generated script in a real tmux server', () => {
   // tmux pane id of every leaf
   function runScript(
     windows: TmuxWindow[],
-    colors = { txt: '#000000', bg: '#26A269' }
+    colors = { txt: '#000000', bg: '#26A269' },
+    windowColors: Record<number, Colors> = {}
   ): Map<number, string> {
     const script = generateScript(windows, {
       sessionName: 'test',
       colors,
+      windowColors,
       showComments: true,
       mouseInputEnabled: true,
-      checkTmuxInstall: false
+      checkTmuxInstall: false,
+      tmuxInstaller: 'apt-get'
     })
     const attachAt = script.lastIndexOf('\n# Attach to the session')
     expect(attachAt).toBeGreaterThan(0)
@@ -313,19 +324,66 @@ describe.skipIf(!tmuxPath)('generated script in a real tmux server', () => {
       'fg=#ffffff,bg=#3355ff'
     )
   })
+
+  // The status bar style each window gets while it is the active one
+  const windowStyles = () =>
+    tmuxOutput('list-windows', '-t', 'test', '-F', '#{window_id}')
+      .split('\n')
+      .map((id) => tmuxOutput('display-message', '-p', '-t', id, '#{E:status-style}'))
+
+  const threeWindows: TmuxWindow[] = [
+    { id: 0, name: 'one', rootPane: leaf(0) },
+    { id: 1, name: 'two', rootPane: split(1, 'horizontal', [leaf(2), leaf(3)]) },
+    { id: 2, name: 'three', rootPane: leaf(4) }
+  ]
+
+  it('gives windows with their own colors those colors in the status bar', () => {
+    runScript(
+      threeWindows,
+      { txt: '#000000', bg: '#26A269' },
+      { 1: { txt: '#ffffff', bg: '#3355ff' } }
+    )
+
+    expect(windowStyles()).toEqual([
+      'fg=#000000 bg=#26A269',
+      'fg=#ffffff,bg=#3355ff',
+      'fg=#000000 bg=#26A269'
+    ])
+  })
+
+  it('applies changed window colors when run again, and drops removed ones', () => {
+    runScript(
+      threeWindows,
+      { txt: '#000000', bg: '#26A269' },
+      { 1: { txt: '#ffffff', bg: '#3355ff' } }
+    )
+    runScript(
+      threeWindows,
+      { txt: '#000000', bg: '#26A269' },
+      { 0: { txt: '#111111', bg: '#ff0000' } }
+    )
+
+    expect(windowStyles()).toEqual([
+      'fg=#111111,bg=#ff0000',
+      'fg=#000000 bg=#26A269',
+      'fg=#000000 bg=#26A269'
+    ])
+  })
 })
 
 describe.skipIf(!tmuxPath)('tmux install check in the generated script', () => {
   let dir: string
   let log: string
 
-  const script = () =>
+  const script = (tmuxInstaller: TmuxInstaller) =>
     generateScript(single(leaf(0)), {
       sessionName: 'test',
       colors: { txt: '#000000', bg: '#26A269' },
+      windowColors: {},
       showComments: true,
       mouseInputEnabled: false,
-      checkTmuxInstall: true
+      checkTmuxInstall: true,
+      tmuxInstaller
     })
 
   const executable = (path: string, body: string) => {
@@ -348,8 +406,8 @@ describe.skipIf(!tmuxPath)('tmux install check in the generated script', () => {
     )
 
   // Runs the script without its final attach, with only the stubs on PATH
-  const run = () => {
-    const generated = script()
+  const run = (tmuxInstaller: TmuxInstaller = 'auto') => {
+    const generated = script(tmuxInstaller)
     const path = join(dir, 'script.sh')
     writeFileSync(
       path,
@@ -369,7 +427,24 @@ describe.skipIf(!tmuxPath)('tmux install check in the generated script', () => {
     for (const sub of ['bin', 'installed']) mkdirSync(join(dir, sub))
     executable(join(dir, 'tmux'), fakeTmux())
     executable(join(dir, 'bin', 'sudo'), `echo "sudo $*" >> "${log}"\nexec "$@"`)
+    // Not root, so installs go through sudo
+    executable(join(dir, 'bin', 'id'), 'echo 1000')
   })
+
+  const sessions = () =>
+    spawnSync(tmuxPath, ['-S', join(dir, 'socket'), 'list-sessions', '-F', '#{session_name}'], {
+      encoding: 'utf8'
+    }).stdout.trim()
+
+  // Each package manager call, through sudo when the command runs as_root
+  const callsFor = (manager: keyof typeof tmuxInstallers, via = 'sudo') =>
+    tmuxInstallers[manager]
+      .split(' && ')
+      .flatMap((command) =>
+        command.startsWith('as_root ')
+          ? [`${via} ${command.slice(8)}`, command.slice(8)]
+          : [command]
+      )
 
   afterEach(() => {
     spawnSync(tmuxPath, ['-S', join(dir, 'socket'), 'kill-server'])
@@ -396,11 +471,50 @@ describe.skipIf(!tmuxPath)('tmux install check in the generated script', () => {
 
     expect(result.status, result.stderr).toBe(0)
     expect(calls()).toEqual(expectedCalls)
-    expect(
-      spawnSync(tmuxPath, ['-S', join(dir, 'socket'), 'list-sessions', '-F', '#{session_name}'], {
-        encoding: 'utf8'
-      }).stdout.trim()
-    ).toBe('test')
+    expect(sessions()).toBe('test')
+  })
+
+  it.each(Object.keys(tmuxInstallers) as (keyof typeof tmuxInstallers)[])(
+    'installs with %s when it is chosen or detected',
+    (manager) => {
+      packageManager(manager)
+
+      for (const installer of [manager, 'auto'] as const) {
+        rmSync(join(dir, 'installed', 'tmux'), { force: true })
+        rmSync(log, { force: true })
+
+        const result = run(installer)
+
+        expect(result.status, result.stderr).toBe(0)
+        expect(calls()).toEqual(callsFor(manager))
+      }
+      expect(sessions()).toBe('test')
+    }
+  )
+
+  it('uses only the chosen package manager', () => {
+    packageManager('apt-get')
+    packageManager('dnf')
+
+    expect(run('dnf').status).toBe(0)
+    expect(calls()).toEqual(callsFor('dnf'))
+  })
+
+  it('installs without sudo when already root', () => {
+    packageManager('apt-get')
+    executable(join(dir, 'bin', 'id'), 'echo 0')
+
+    expect(run('apt-get').status).toBe(0)
+    expect(calls()).toEqual(['apt-get update', 'apt-get install -y tmux'])
+  })
+
+  it('installs with doas when there is no sudo', () => {
+    packageManager('apk')
+    rmSync(join(dir, 'bin', 'sudo'))
+    executable(join(dir, 'bin', 'doas'), `echo "doas $*" >> "${log}"\nexec "$@"`)
+
+    expect(run('apk').status).toBe(0)
+    expect(calls()).toEqual(callsFor('apk', 'doas'))
   })
 
   it('installs nothing when tmux is already there', () => {
@@ -412,12 +526,13 @@ describe.skipIf(!tmuxPath)('tmux install check in the generated script', () => {
   })
 
   it.each([
-    ['there is no known package manager', () => {}],
-    ['the install fails', () => packageManager('apt-get', 100)]
-  ])('stops with a clear message when %s', (_, setup) => {
+    ['there is no known package manager', 'auto', () => {}],
+    ['the chosen package manager is not there', 'dnf', () => packageManager('apt-get')],
+    ['the install fails', 'auto', () => packageManager('apt-get', 100)]
+  ] as const)('stops with a clear message when %s', (_, installer, setup) => {
     setup()
 
-    const result = run()
+    const result = run(installer)
 
     expect(result.status).toBe(1)
     expect(result.stderr).toContain(

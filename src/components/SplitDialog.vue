@@ -1,10 +1,16 @@
 <template>
   <base-dialog :show="show" :panel-class="'max-w-sm'" @close="$emit('cancel')">
     <form class="flex flex-col gap-4" @submit.prevent="confirm()">
-      <h3
-        class="text-lg font-semibold text-gray-900 dark:text-white"
-        v-text="$label('split-dialog-title')"
-      />
+      <div class="flex flex-col gap-1">
+        <h3
+          class="text-lg font-semibold text-gray-900 dark:text-white"
+          v-text="$label('split-dialog-title')"
+        />
+        <p
+          class="text-sm text-gray-600 dark:text-gray-300"
+          v-text="$label('split-dialog-subtitle')"
+        />
+      </div>
 
       <div class="flex gap-3">
         <input-wrapper
@@ -19,7 +25,6 @@
             type="number"
             inputmode="numeric"
             min="1"
-            :max="maxCount"
             class="block w-full p-2 rounded-md shadow-sm ring-1 ring-inset ring-gray-300 focus:outline-none focus:ring-2 focus:ring-green-700 bg-white dark:bg-slate-700 dark:ring-0 dark:focus:ring-0"
           />
         </input-wrapper>
@@ -31,7 +36,6 @@
             type="number"
             inputmode="numeric"
             min="1"
-            :max="maxCount"
             class="block w-full p-2 rounded-md shadow-sm ring-1 ring-inset ring-gray-300 focus:outline-none focus:ring-2 focus:ring-green-700 bg-white dark:bg-slate-700 dark:ring-0 dark:focus:ring-0"
           />
         </input-wrapper>
@@ -75,11 +79,8 @@ import InputWrapper from './InputWrapper.vue'
 import PaneShapePreview from './PaneShapePreview.vue'
 import { gridShape, type PaneShape } from '../presets'
 
-// Most columns or rows in one split, more leaves tmux panes too small to use
-const maxCount = 8
-
 const isCount = (value: unknown): value is number =>
-  Number.isInteger(value) && (value as number) >= 1 && (value as number) <= maxCount
+  Number.isInteger(value) && (value as number) >= 1
 
 // Asks how many columns and rows to split a pane into, confirms with their grid shape
 export default defineComponent({
@@ -102,7 +103,6 @@ export default defineComponent({
 
   data() {
     return {
-      maxCount,
       // Number while valid, the inputs give '' when cleared
       columns: 2 as number | string,
       rows: 1 as number | string

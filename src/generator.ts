@@ -15,28 +15,61 @@ export interface TmuxWindow {
   rootPane: Pane
 }
 
+export interface Colors {
+  txt: string
+  bg: string
+}
+
 export interface ScriptOptions {
   sessionName: string
-  colors: { txt: string; bg: string }
+  colors: Colors
+  // Status bar colors of the windows that have their own, by window id
+  windowColors: Record<number, Colors>
   showComments: boolean
   mouseInputEnabled: boolean
   checkTmuxInstall: boolean
+  // Package manager the install check uses, 'auto' tries each one that is installed
+  tmuxInstaller: TmuxInstaller
 }
+
+/**
+ * The command that installs tmux with each package manager, by the name of its executable.
+ * as_root runs it with sudo or doas unless already root. In 'auto' they are tried in this
+ * order, so a distro's own package manager wins over brew.
+ */
+export const tmuxInstallers = {
+  'apt-get': 'as_root apt-get update && as_root apt-get install -y tmux',
+  dnf: 'as_root dnf install -y tmux',
+  yum: 'as_root yum install -y tmux',
+  pacman: 'as_root pacman -S --noconfirm tmux',
+  zypper: 'as_root zypper --non-interactive install tmux',
+  apk: 'as_root apk add tmux',
+  'xbps-install': 'as_root xbps-install -Sy tmux',
+  emerge: 'as_root emerge app-misc/tmux',
+  pkg: 'as_root pkg install -y tmux',
+  // Homebrew refuses to run as root
+  brew: 'brew install tmux',
+  port: 'as_root port install tmux'
+}
+
+export type TmuxInstaller = 'auto' | keyof typeof tmuxInstallers
 
 const blocks = {
   is_tmux_installed_check: {
     comment: 'Install tmux if it is missing, and stop if that is not possible',
     code: [
       'if ! command -v tmux >/dev/null 2>&1; then',
-      '  if command -v apt-get >/dev/null 2>&1; then',
-      '    sudo apt-get update && sudo apt-get install -y tmux',
-      '  elif command -v dnf >/dev/null 2>&1; then',
-      '    sudo dnf install -y tmux',
-      '  elif command -v pacman >/dev/null 2>&1; then',
-      '    sudo pacman -S --noconfirm tmux',
-      '  elif command -v brew >/dev/null 2>&1; then',
-      '    brew install tmux',
-      '  fi',
+      '  as_root() {',
+      '    if [ "$(id -u)" -ne 0 ] && command -v sudo >/dev/null 2>&1; then',
+      '      sudo "$@"',
+      '    elif [ "$(id -u)" -ne 0 ] && command -v doas >/dev/null 2>&1; then',
+      '      doas "$@"',
+      '    else',
+      '      "$@"',
+      '    fi',
+      '  }',
+      '',
+      'installCommands',
       '',
       '  command -v tmux >/dev/null 2>&1 || {',
       "    echo 'tmux is not installed and could not be installed automatically, install it and run this script again' >&2",
@@ -75,6 +108,18 @@ const blocks = {
   status_bar_colors: {
     comment: 'Set status bar colors',
     code: `tmux set-option -t "$SESSION_NAME" status-style 'fg=fgColor,bg=bgColor'`
+  },
+  // tmux expands status-style as a format for the active window, so it can pick that window's
+  // @status-style. The fallback is space separated, a comma would end the #{?...} branch
+  per_window_status_bar_colors: {
+    comment:
+      'Set status bar colors, the bar takes the colors of the active window when it has its own',
+    code: `tmux set-option -t "$SESSION_NAME" status-style '#{?@status-style,#{@status-style},fg=fgColor bg=bgColor}'`
+  },
+  window_ids: {
+    comment:
+      'Set the colors of each window, found by position so changed colors apply on every run',
+    code: `set -- $(tmux list-windows -t "=$SESSION_NAME" -F '#{window_id}')`
   }
 }
 
@@ -132,7 +177,11 @@ export function generateScript(windows: TmuxWindow[], options: ScriptOptions): s
   const lines = ['#!/bin/sh']
 
   if (options.checkTmuxInstall) {
-    lines.push(getBlock('is_tmux_installed_check'))
+    lines.push(
+      getBlock('is_tmux_installed_check').replace('installCommands', () =>
+        indent(installCommands(options.tmuxInstaller))
+      )
+    )
   }
 
   lines.push(`SESSION_NAME="${options.sessionName}"`)
@@ -167,11 +216,29 @@ export function generateScript(windows: TmuxWindow[], options: ScriptOptions): s
 
   lines.push(`${getBlock('create_session')}\n${indent(layout.join('\n\n'))}\nfi`)
 
+  const hasWindowColors = windows.some((window) => options.windowColors[window.id])
+
   lines.push(
-    getBlock('status_bar_colors')
+    getBlock(hasWindowColors ? 'per_window_status_bar_colors' : 'status_bar_colors')
       .replace('fgColor', options.colors.txt)
       .replace('bgColor', options.colors.bg)
   )
+
+  if (hasWindowColors) {
+    // Windows without colors of their own are unset, in case an earlier run gave them some
+    const windowLines = windows.map((window, index) => {
+      const colors = options.windowColors[window.id]
+      // Positional parameter of the window, braced since $10 would be $1 followed by 0
+      const target = `"\${${index + 1}}"`
+      const setOption = colors
+        ? `tmux set-option -w -t ${target} @status-style 'fg=${colors.txt},bg=${colors.bg}'`
+        : `tmux set-option -wu -t ${target} @status-style`
+
+      return `[ -n ${target} ] && ${setOption}`
+    })
+
+    lines.push([getBlock('window_ids'), ...windowLines].join('\n'))
+  }
 
   if (options.mouseInputEnabled) {
     lines.push(getBlock('enable_mouse_controls'))
@@ -180,6 +247,18 @@ export function generateScript(windows: TmuxWindow[], options: ScriptOptions): s
   lines.push(getBlock('attach_session'))
 
   return lines.join('\n\n') + '\n'
+}
+
+// Only runs a package manager that is there, so a wrong pick ends in the clear message
+function installCommands(installer: TmuxInstaller): string {
+  const branches = Object.entries(tmuxInstallers)
+    .filter(([manager]) => installer === 'auto' || manager === installer)
+    .map(
+      ([manager, command], index) =>
+        `${index ? 'elif' : 'if'} command -v ${manager} >/dev/null 2>&1; then\n${indent(command)}`
+    )
+
+  return `${branches.join('\n')}\nfi`
 }
 
 function buildPaneCommand(pane: Pane): string | null {

@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import type { Direction, Pane, TmuxWindow } from '../generator'
+import type { Colors, Direction, Pane, TmuxWindow } from '../generator'
 import { label } from '../labels'
 import type { PaneShape } from '../presets'
 
@@ -18,7 +18,7 @@ const newWindow = (id: number, name: string, rootPaneId: number): TmuxWindow => 
   rootPane: newPane(rootPaneId)
 })
 
-const defaultColors = () => ({
+const defaultColors = (): Colors => ({
   txt: '#000000',
   bg: '#26A269'
 })
@@ -44,6 +44,10 @@ export const layout = defineStore('layout', {
     nextPaneId: 1,
     nextWindowId: 1,
     colors: defaultColors(),
+    // With perWindowColors on, a window's own status bar colors (by window id) replace colors.
+    // Kept outside the undo history, like colors
+    perWindowColors: false,
+    windowColors: {} as Record<number, Colors>,
     windows: [newWindow(0, defaultWindowName(1), 0)],
     activeWindowId: 0,
     // Serialized snapshots of the layout (see snapshot()), newest last
@@ -53,6 +57,14 @@ export const layout = defineStore('layout', {
   getters: {
     activeWindow(state): TmuxWindow {
       return state.windows.find((window) => window.id === state.activeWindowId) ?? state.windows[0]
+    },
+
+    // Status bar colors while a window is open
+    colorsOf(state): (windowId: number) => Colors {
+      return (windowId) => (state.perWindowColors && state.windowColors[windowId]) || state.colors
+    },
+    activeColors(): Colors {
+      return this.colorsOf(this.activeWindowId)
     }
   },
 
@@ -138,6 +150,15 @@ export const layout = defineStore('layout', {
       pane.items = items
     },
 
+    // Sets the active window's own color with perWindowColors on, the session color otherwise
+    setColor(key: keyof Colors, value: string) {
+      if (this.perWindowColors) {
+        this.windowColors[this.activeWindowId] = { ...this.activeColors, [key]: value }
+      } else {
+        this.colors[key] = value
+      }
+    },
+
     setCommand(id: number, command: string) {
       const pane = this.findPane(id)
 
@@ -157,6 +178,8 @@ export const layout = defineStore('layout', {
       }
 
       const window = newWindow(this.nextWindowId++, defaultWindowName(number), this.nextPaneId++)
+      // An undo can hand out a window id again, the new window starts with the session colors
+      delete this.windowColors[window.id]
 
       this.windows.push(window)
       this.activeWindowId = window.id
@@ -196,6 +219,8 @@ export const layout = defineStore('layout', {
       this.windows = [newWindow(0, defaultWindowName(1), 0)]
       this.activeWindowId = 0
       this.colors = defaultColors()
+      this.perWindowColors = false
+      this.windowColors = {}
       this.history = []
     }
   }

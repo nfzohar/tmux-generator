@@ -18,7 +18,7 @@ export const labels = {
   'reset-title': 'Do full reset',
   'reset-confirm-title': 'Reset the layout?',
   'reset-confirm-message':
-    "This deletes every window, pane and command and resets the status bar colors. It can't be undone.",
+    "This deletes every window, pane and command and resets all status bar colors. It can't be undone.",
 
   export: 'Export',
   'export-title': 'Export layout as program',
@@ -29,12 +29,27 @@ export const labels = {
     'Check if tmux is installed on your system and install it if missing.',
   'export-mouse': 'Enable mouse controls',
   'export-mouse-title': 'Enable managing the layout with mouse input.',
+  'export-installer': 'Distro',
+  'export-installer-title': 'Package manager the install check uses to install tmux',
   'export-comments': 'Show comments',
   'export-comments-title': 'Toggle comments for script commands.',
   'export-download': 'Download',
   'export-script': 'Generated Script',
   'export-copy': 'Copy',
   'export-copied': 'Copied',
+
+  'installer-apt-get': 'Ubuntu / Debian (apt)',
+  'installer-dnf': 'Fedora / RHEL 8+ (dnf)',
+  'installer-yum': 'CentOS 7 / older RHEL (yum)',
+  'installer-pacman': 'Arch / Manjaro (pacman)',
+  'installer-zypper': 'openSUSE (zypper)',
+  'installer-apk': 'Alpine (apk)',
+  'installer-xbps-install': 'Void (xbps)',
+  'installer-emerge': 'Gentoo (emerge)',
+  'installer-pkg': 'FreeBSD / Termux (pkg)',
+  'installer-brew': 'macOS, Homebrew (brew)',
+  'installer-port': 'macOS, MacPorts (port)',
+  'installer-auto': 'Any (detect package manager)',
 
   pane: 'Pane',
   'pane-title': 'Pane {id}',
@@ -48,6 +63,8 @@ export const labels = {
   'pane-more-title': 'More split options',
 
   'preset-dialog-title': 'Layout presets',
+  'preset-dialog-subtitle':
+    'Pick a layout to split this pane into. Its command moves to the top left pane.',
   'preset-main-side': 'Main + side stack',
   'preset-main-bottom': 'Main + bottom row',
   'preset-main-side-three': 'Main + three stacked',
@@ -56,6 +73,8 @@ export const labels = {
   'preset-tiled': 'Tiled 2 × 2',
 
   'split-dialog-title': 'Custom pane split',
+  'split-dialog-subtitle':
+    'Split this pane into custom number of columns and rows. Its command moves to the top left pane.',
   'split-dialog-columns': 'Columns',
   'split-dialog-rows': 'Rows',
   'split-dialog-count': '{count} panes',
@@ -67,9 +86,12 @@ export const labels = {
   'window-close': 'Close {name}',
   'window-name-input': 'Window {number} name',
 
+  'status-per-window': 'Per window',
+  'status-per-window-title':
+    'Give each window its own status bar colors, the pickers then set the open window',
   'status-text-color': 'Text',
   'status-text-color-title': 'Select status bar foreground color',
-  'status-background-color': 'Background',
+  'status-background-color': 'Bar',
   'status-background-color-title': 'Select status bar background color',
   'status-preview-title': 'Status bar custom color preview',
 

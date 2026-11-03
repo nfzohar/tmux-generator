@@ -61,7 +61,7 @@
       @change="$layout.pushHistory(snapshotBeforeEdit)"
     />
 
-    <context-menu ref="menu" :items="actions" @select="openDialog = actions[$event].dialog" />
+    <context-menu ref="menu" :items="actions" @select="actions[$event].select()" />
 
     <preset-dialog
       :show="openDialog === 'presets'"
@@ -77,7 +77,12 @@
     class="flex flex-1 min-w-0 min-h-0 gap-2"
     :class="pane.direction == 'vertical' ? 'flex-col' : 'flex-row'"
   >
-    <preview-pane v-for="child in pane.items" :key="child.id" :pane="child" />
+    <preview-pane
+      v-for="child in pane.items"
+      :key="child.id"
+      :pane="child"
+      @reset="$emit('reset')"
+    />
   </div>
 </template>
 
@@ -101,6 +106,9 @@ export default defineComponent({
     }
   },
 
+  // Asks for the full reset, which App confirms first. Passed up through the pane groups
+  emits: ['reset'],
+
   data() {
     return {
       isFocused: false,
@@ -110,10 +118,11 @@ export default defineComponent({
   },
 
   computed: {
-    actions(): { label: string; dialog: 'presets' | 'grid' }[] {
+    actions(): { label: string; select: () => void }[] {
       return [
-        { label: this.$label('pane-presets'), dialog: 'presets' },
-        { label: this.$label('pane-split-grid'), dialog: 'grid' }
+        { label: this.$label('pane-presets'), select: () => (this.openDialog = 'presets') },
+        { label: this.$label('pane-split-grid'), select: () => (this.openDialog = 'grid') },
+        { label: this.$label('reset'), select: () => this.$emit('reset') }
       ]
     },
 
@@ -121,7 +130,7 @@ export default defineComponent({
       return this.pane.items?.length > 0
     },
     focusColor(): string {
-      return this.$layout.colors.bg
+      return this.$layout.activeColors.bg
     }
   },
 

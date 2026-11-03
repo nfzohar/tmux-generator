@@ -1,6 +1,8 @@
+import { spawnSync } from 'node:child_process'
 import { describe, expect, it } from 'vitest'
 import {
   generateScript,
+  tmuxInstallers,
   type Direction,
   type Pane,
   type ScriptOptions,
@@ -18,9 +20,11 @@ const split = (id: number, direction: Direction, items: Pane[]): Pane => ({
 const options: ScriptOptions = {
   sessionName: 'test',
   colors: { txt: '#000000', bg: '#26A269' },
+  windowColors: {},
   showComments: true,
   mouseInputEnabled: false,
-  checkTmuxInstall: false
+  checkTmuxInstall: false,
+  tmuxInstaller: 'apt-get'
 }
 
 const window = (id: number, name: string, rootPane: Pane): TmuxWindow => ({ id, name, rootPane })
@@ -38,6 +42,10 @@ const scriptLines = (script: string) => script.split('\n').map((line) => line.tr
 
 const linesWith = (script: string, text: string) =>
   scriptLines(script).filter((line) => line.includes(text))
+
+// The if/elif branches of the install check, one per package manager
+const managerChecks = (script: string) =>
+  scriptLines(script).filter((line) => /^(if|elif) command -v /.test(line))
 
 const splitLine = (newVar: string, flag: string, target: string, size: number) =>
   `${newVar}=$(tmux split-window ${flag} -t "$${target}" -l ${size}% -P -F '#{pane_id}')`
@@ -308,6 +316,44 @@ describe('script options', () => {
     )
   })
 
+  it('lets the active window pick the status bar colors when windows have their own', () => {
+    const windows = [
+      window(0, 'one', leaf(0)),
+      window(4, 'two', leaf(1)),
+      window(7, 'three', leaf(2))
+    ]
+    const script = generateWindows(windows, {
+      windowColors: { 4: { txt: '#ffffff', bg: '#3355ff' }, 99: { txt: '#000000', bg: '#ff0000' } }
+    })
+
+    expect(linesWith(script, 'status-style')).toEqual([
+      `tmux set-option -t "$SESSION_NAME" status-style '#{?@status-style,#{@status-style},fg=#000000 bg=#26A269}'`,
+      `[ -n "\${1}" ] && tmux set-option -wu -t "\${1}" @status-style`,
+      `[ -n "\${2}" ] && tmux set-option -w -t "\${2}" @status-style 'fg=#ffffff,bg=#3355ff'`,
+      `[ -n "\${3}" ] && tmux set-option -wu -t "\${3}" @status-style`
+    ])
+    expect(script).toContain(`set -- $(tmux list-windows -t "=$SESSION_NAME" -F '#{window_id}')`)
+  })
+
+  it('keeps one status bar color when no window has its own', () => {
+    const script = generate(tree, { windowColors: { 99: { txt: '#000000', bg: '#ff0000' } } })
+
+    expect(linesWith(script, 'status-style')).toEqual([
+      `tmux set-option -t "$SESSION_NAME" status-style 'fg=#000000,bg=#26A269'`
+    ])
+    expect(script).not.toContain('list-windows')
+  })
+
+  it('braces the position of the tenth window and later', () => {
+    const windows = Array.from({ length: 10 }, (_, id) => window(id, `w${id}`, leaf(id)))
+    const script = generateWindows(windows, {
+      windowColors: { 9: { txt: '#000000', bg: '#ff0000' } }
+    })
+
+    expect(script).toContain(`[ -n "\${10}" ] && tmux set-option -w -t "\${10}" @status-style`)
+    expect(spawnSync('sh', ['-n'], { input: script }).status).toBe(0)
+  })
+
   it('adds the mouse and install check blocks only when enabled', () => {
     expect(generate(tree)).not.toContain('mouse on')
     expect(generate(tree)).not.toContain('command -v tmux')
@@ -316,6 +362,37 @@ describe('script options', () => {
     expect(script).toContain('tmux set-option -t "$SESSION_NAME" mouse on')
     expect(script).toContain('command -v tmux >/dev/null 2>&1 ||')
   })
+
+  it('installs tmux only with the chosen package manager', () => {
+    const script = generate(tree, { checkTmuxInstall: true, tmuxInstaller: 'dnf' })
+
+    expect(managerChecks(script)).toEqual(['if command -v dnf >/dev/null 2>&1; then'])
+    expect(script).toContain('as_root dnf install -y tmux')
+    expect(script).not.toContain('apt-get')
+  })
+
+  it('tries every package manager in order when detecting one', () => {
+    const script = generate(tree, { checkTmuxInstall: true, tmuxInstaller: 'auto' })
+
+    expect(managerChecks(script)).toEqual(
+      Object.keys(tmuxInstallers).map(
+        (manager, index) => `${index ? 'elif' : 'if'} command -v ${manager} >/dev/null 2>&1; then`
+      )
+    )
+  })
+
+  it.each([...Object.keys(tmuxInstallers), 'auto'] as const)(
+    'writes valid shell for the %s install check',
+    (installer) => {
+      const script = generate(tree, {
+        checkTmuxInstall: true,
+        tmuxInstaller: installer as ScriptOptions['tmuxInstaller']
+      })
+      const result = spawnSync('sh', ['-n'], { input: script, encoding: 'utf8' })
+
+      expect(result.status, result.stderr).toBe(0)
+    }
+  )
 
   it('leaves out every comment when comments are off', () => {
     const script = generate(tree, {

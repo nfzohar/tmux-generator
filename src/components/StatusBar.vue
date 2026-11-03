@@ -3,15 +3,6 @@
     class="flex flex-row flex-wrap sm:flex-nowrap gap-2 items-center justify-between px-3 py-2 w-full text-sm bg-white ring-1 ring-gray-200 dark:bg-slate-800 dark:ring-0"
   >
     <div class="flex items-center gap-2 min-w-0 basis-full sm:basis-auto">
-      <button
-        class="flex items-center shrink-0 p-2 pointer-coarse:p-2.5 bg-white text-gray-700 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 hover:text-blue-700 dark:bg-gray-700 dark:text-white dark:ring-0 dark:hover:bg-blue-800 dark:hover:text-white transition-colors rounded-md cursor-pointer"
-        :title="$label('window-add')"
-        :aria-label="$label('window-add')"
-        @click="$layout.addWindow()"
-      >
-        <i class="fa fa-plus" />
-      </button>
-
       <div ref="tabs" class="flex items-center gap-2 min-w-0 overflow-x-auto scrollbar-hide">
         <template v-for="(window, index) in $layout.windows" :key="window.id">
           <input
@@ -31,7 +22,7 @@
             class="flex items-center rounded-md font-semibold whitespace-nowrap transition-colors"
             :class="
               window.id === $layout.activeWindowId
-                ? 'bg-green-700 hover:bg-green-800 text-white'
+                ? 'bg-gray-200 text-gray-900 ring-1 ring-inset ring-gray-400 dark:bg-gray-900 dark:text-white dark:ring-gray-600'
                 : 'bg-white text-gray-700 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 hover:text-blue-700 dark:bg-gray-700 dark:text-white dark:ring-0 dark:hover:bg-blue-800 dark:hover:text-white'
             "
             :data-active="window.id === $layout.activeWindowId || undefined"
@@ -43,7 +34,17 @@
               @click="$layout.selectWindow(window.id)"
               @dblclick="startRenaming(window)"
             >
-              <span class="opacity-70" v-text="index + 1" />
+              <span
+                v-if="$layout.perWindowColors"
+                class="flex items-center justify-center w-4 h-4 shrink-0 rounded-xs ring-1 ring-black/20 dark:ring-white/30 text-[10px] font-bold leading-none"
+                :style="{
+                  backgroundColor: $layout.colorsOf(window.id).bg,
+                  color: $layout.colorsOf(window.id).txt
+                }"
+                aria-hidden="true"
+                v-text="'T'"
+              />
+              <!-- <span class="opacity-70" v-text="index + 1" /> -->
               <span v-text="window.name" />
             </button>
             <button
@@ -58,33 +59,55 @@
           </div>
         </template>
       </div>
+
+      <button
+        class="flex items-center shrink-0 p-2 pointer-coarse:p-2.5 bg-white text-gray-700 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 hover:text-blue-700 dark:bg-gray-700 dark:text-white dark:ring-0 dark:hover:bg-blue-800 dark:hover:text-white transition-colors rounded-md cursor-pointer"
+        :title="$label('window-add')"
+        :aria-label="$label('window-add')"
+        @click="$layout.addWindow()"
+      >
+        <i class="fa fa-plus" />
+      </button>
     </div>
 
-    <div class="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto shrink-0">
-      <div class="flex items-center gap-2 sm:mx-2">
+    <div
+      class="flex flex-wrap items-center justify-between sm:justify-end gap-2 w-full sm:w-auto shrink-0"
+    >
+      <div class="flex flex-wrap items-center gap-x-3 gap-y-2 sm:mx-2">
+        <div class="flex items-center gap-1" :title="$label('status-per-window-title')">
+          <input
+            id="per_window_colors"
+            v-model="$layout.perWindowColors"
+            type="checkbox"
+            class="rounded border-slate-600 pointer-coarse:w-5 pointer-coarse:h-5"
+          />
+          <label :for="'per_window_colors'" v-text="$label('status-per-window')" />
+        </div>
         <div class="flex items-center gap-1" :title="$label('status-text-color-title')">
           <label :for="'foreground_color_select'" v-text="$label('status-text-color')" />
           <input
             id="foreground_color_select"
-            v-model="$layout.colors.txt"
+            :value="$layout.activeColors.txt"
             class="w-5 h-5 pointer-coarse:w-7 pointer-coarse:h-7 rounded-xs border-2 border-gray-300 dark:border-gray-700"
             type="color"
+            @input="setColor('txt', $event)"
           />
         </div>
         <div class="flex items-center gap-1" :title="$label('status-background-color-title')">
           <label :for="'background_color_select'" v-text="$label('status-background-color')" />
           <input
             id="background_color_select"
-            v-model="$layout.colors.bg"
+            :value="$layout.activeColors.bg"
             class="w-5 h-5 pointer-coarse:w-7 pointer-coarse:h-7 rounded-xs border-2 border-gray-300 dark:border-gray-700"
             type="color"
+            @input="setColor('bg', $event)"
           />
         </div>
       </div>
 
       <span
         class="py-1 px-2 rounded-md border whitespace-nowrap border-gray-300 dark:border-gray-800"
-        :style="{ backgroundColor: $layout.colors.bg, color: $layout.colors.txt }"
+        :style="{ backgroundColor: $layout.activeColors.bg, color: $layout.activeColors.txt }"
         :title="$label('status-preview-title')"
         v-text="timestamp"
       />
@@ -98,7 +121,7 @@
 import { defineComponent } from 'vue'
 import format from 'date-fns/format'
 import ThemeToggle from './ThemeToggle.vue'
-import type { TmuxWindow } from '../generator'
+import type { Colors, TmuxWindow } from '../generator'
 
 export default defineComponent({
   name: 'StatusBar',
@@ -177,6 +200,10 @@ export default defineComponent({
         this.$layout.renameWindow(this.renamingWindowId, this.nameBeforeRenaming)
         this.renamingWindowId = null
       }
+    },
+
+    setColor(key: keyof Colors, event: Event) {
+      this.$layout.setColor(key, (event.target as HTMLInputElement).value)
     },
 
     updateTime() {

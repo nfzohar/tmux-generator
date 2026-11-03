@@ -37,7 +37,11 @@
     </div>
 
     <div class="flex gap-1 rounded-lg flex-1 min-h-0 overflow-scroll scrollbar-hide px-3">
-      <preview-pane :key="$layout.activeWindowId" :pane="$layout.activeWindow.rootPane" />
+      <preview-pane
+        :key="$layout.activeWindowId"
+        :pane="$layout.activeWindow.rootPane"
+        @reset="confirmingReset = true"
+      />
     </div>
 
     <status-bar />

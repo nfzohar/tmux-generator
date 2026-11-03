@@ -1,10 +1,16 @@
 <template>
   <base-dialog :show="show" :panel-class="'max-w-lg'" @close="$emit('cancel')">
     <div class="flex flex-col gap-4">
-      <h3
-        class="text-lg font-semibold text-gray-900 dark:text-white"
-        v-text="$label('preset-dialog-title')"
-      />
+      <div class="flex flex-col gap-1">
+        <h3
+          class="text-lg font-semibold text-gray-900 dark:text-white"
+          v-text="$label('preset-dialog-title')"
+        />
+        <p
+          class="text-sm text-gray-600 dark:text-gray-300"
+          v-text="$label('preset-dialog-subtitle')"
+        />
+      </div>
 
       <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
         <button

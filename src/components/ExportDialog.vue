@@ -44,6 +44,26 @@
           </input-wrapper>
 
           <input-wrapper
+            v-if="checkTmuxInstall"
+            :label="$label('export-installer')"
+            :name="'tmux-installer'"
+            :title="$label('export-installer-title')"
+          >
+            <select
+              id="tmux-installer"
+              v-model="tmuxInstaller"
+              class="block w-full p-2 rounded-md shadow-sm ring-1 ring-inset ring-gray-300 focus:outline-none focus:ring-2 focus:ring-green-700 bg-white dark:bg-slate-700 dark:ring-0 dark:focus:ring-0"
+            >
+              <option
+                v-for="installer in installers"
+                :key="installer"
+                :value="installer"
+                v-text="$label(`installer-${installer}`)"
+              />
+            </select>
+          </input-wrapper>
+
+          <input-wrapper
             :label="$label('export-mouse')"
             :label-position="'bottom'"
             :name="'mouse-enabled'"
@@ -111,7 +131,7 @@
 import { defineComponent, type PropType } from 'vue'
 import BaseDialog from './BaseDialog.vue'
 import InputWrapper from './InputWrapper.vue'
-import { generateScript, type TmuxWindow } from '../generator'
+import { generateScript, tmuxInstallers, type TmuxInstaller, type TmuxWindow } from '../generator'
 
 export default defineComponent({
   name: 'ExportDialog',
@@ -133,7 +153,10 @@ export default defineComponent({
       generatedSessionName: `session_${Math.random().toString().slice(2, 8)}`,
       showComments: true,
       mouseInputEnabled: false,
-      checkTmuxInstall: false
+      checkTmuxInstall: false,
+      tmuxInstaller: 'apt-get' as TmuxInstaller,
+      // Every package manager, then detecting one
+      installers: [...Object.keys(tmuxInstallers), 'auto'] as TmuxInstaller[]
     }
   },
 
@@ -147,9 +170,11 @@ export default defineComponent({
       return generateScript(this.windows, {
         sessionName: this.tmuxSessionName,
         colors: this.$layout.colors,
+        windowColors: this.$layout.perWindowColors ? this.$layout.windowColors : {},
         showComments: this.showComments,
         mouseInputEnabled: this.mouseInputEnabled,
-        checkTmuxInstall: this.checkTmuxInstall
+        checkTmuxInstall: this.checkTmuxInstall,
+        tmuxInstaller: this.tmuxInstaller
       })
     }
   },

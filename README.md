@@ -10,13 +10,20 @@ pane in place and every command already running.
 
 - **Split a pane** with the buttons in its header, horizontally (side by side) or
   vertically (stacked). Right-click a pane (or tap its `⋮` button on a touchscreen) for
-  **Select a preset**, common layouts like a main pane with a side stack, or
-  **Custom pane split** to split it into any number of columns and rows, up to 8 each.
+  more:
+  - **Select a preset**: common layouts like a main pane with a side stack.
+  - **Custom pane split**: any number of columns and rows. Each pane needs at least a
+    line and a column of your terminal, so a grid too big for it stops the script with
+    tmux's "no space for new pane".
+  - **Reset**: the same full reset as the button in the header.
 - **Type a command** into a pane. Several lines run one after another.
-- **Windows** are in the bottom left: `+` adds one, click a tab to open it, double-click
-  to rename it, `×` to close it.
-- **Status bar colors** are the text and background pickers in the bottom right. The
-  preview next to them shows the result.
+- **Windows** are in the bottom left: `+` to the right of the tabs adds one, click a tab
+  to open it, double-click to rename it, `×` to close it.
+- **Status bar colors** are the Text and Bar pickers in the bottom right. The
+  preview next to them shows the result. Tick **Per window** to give each window its own
+  colors: the pickers then set the open window, and tmux switches the whole status bar to
+  a window's colors while it's active. Windows you haven't colored keep the session
+  colors. Unticking keeps the window colors for later, but exports one color for all.
 - **Undo** steps back through splits, command edits and window changes. **Reset** starts
   over.
 - **Export** shows the script, ready to copy or download.
@@ -29,7 +36,7 @@ clock in the bottom right switches between them.
 | Option | What it does |
 | --- | --- |
 | Session name | Name of the tmux session. Spaces and characters tmux doesn't allow become `_`. Left empty, a random `session_…` name is used. |
-| Is TMUX installed check | Installs tmux when it's missing, with `apt-get`, `dnf` or `pacman` (using `sudo`) or `brew`. If that isn't possible, the script stops with a message instead of running without tmux. |
+| Is TMUX installed check | Installs tmux when it's missing, with the package manager of the **Distro** picked below it (Ubuntu / Debian by default). **Any** tries each package manager in turn: `apt-get`, `dnf`, `yum`, `pacman`, `zypper`, `apk`, `xbps-install`, `emerge`, `pkg`, `brew`, `port`. Installs run with `sudo`, or `doas` when there's no `sudo`, unless the script already runs as root (Homebrew never runs as root). If installing isn't possible, the script stops with a message instead of running without tmux. |
 | Enable mouse controls | Turns on `mouse` for the session. |
 | Show comments | Explains each part of the script in comments. |
 
@@ -148,10 +155,11 @@ Built with Vue 3, Pinia, Tailwind CSS 4 and Vite.
   creation, quoting, export options, and on 200 random layouts that every pane is created
   once and before it's used.
 - **Layout store tests** check that splitting a pane, into a row, a column, a grid or
-  each preset, builds the right pane tree in one undo step.
+  each preset, builds the right pane tree in one undo step, and that the color pickers set
+  the session or the open window.
 - **tmux tests** run generated scripts on a private tmux server and check every window's
   name, every pane's position and size, that each command ran in its own pane, and that
-  re-running a script reuses the session while applying new colors. They are skipped
-  when tmux isn't installed.
+  re-running a script reuses the session while applying new colors, per window too. They
+  are skipped when tmux isn't installed.
 
 `vercel.json` serves the production build as a single-page app on Vercel.

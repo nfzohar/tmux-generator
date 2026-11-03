@@ -22,7 +22,7 @@
             class="flex items-center rounded-md font-semibold whitespace-nowrap transition-colors"
             :class="
               window.id === $layout.activeWindowId
-                ? 'bg-gray-200 text-gray-900 ring-1 ring-inset ring-gray-400 dark:bg-gray-900 dark:text-white dark:ring-gray-600'
+                ? 'bg-gray-200 text-gray-900 ring-1 ring-inset ring-gray-400 dark:bg-gray-800 dark:text-white dark:ring-gray-600'
                 : 'bg-white text-gray-700 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 hover:text-blue-700 dark:bg-gray-700 dark:text-white dark:ring-0 dark:hover:bg-blue-800 dark:hover:text-white'
             "
             :data-active="window.id === $layout.activeWindowId || undefined"
@@ -44,7 +44,6 @@
                 aria-hidden="true"
                 v-text="'T'"
               />
-              <!-- <span class="opacity-70" v-text="index + 1" /> -->
               <span v-text="window.name" />
             </button>
             <button
@@ -70,10 +69,8 @@
       </button>
     </div>
 
-    <div
-      class="flex flex-wrap items-center justify-between sm:justify-end gap-2 w-full sm:w-auto shrink-0"
-    >
-      <div class="flex flex-wrap items-center gap-x-3 gap-y-2 sm:mx-2">
+    <div class="flex items-center sm:justify-end gap-1.5 sm:gap-2 w-full sm:w-auto shrink-0">
+      <div class="flex items-center gap-1.5 sm:gap-3 sm:mx-2 whitespace-nowrap">
         <div class="flex items-center gap-1" :title="$label('status-per-window-title')">
           <input
             id="per_window_colors"
@@ -105,14 +102,18 @@
         </div>
       </div>
 
+      <!-- Phones only show the time, so the colors and theme toggle fit in one row. The
+           smallest ones leave it out, the pickers and window tabs show the colors too -->
       <span
-        class="py-1 px-2 rounded-md border whitespace-nowrap border-gray-300 dark:border-gray-800"
+        class="max-[359px]:hidden ml-auto sm:ml-0 py-1 px-2 rounded-md border whitespace-nowrap border-gray-300 dark:border-gray-800"
         :style="{ backgroundColor: $layout.activeColors.bg, color: $layout.activeColors.txt }"
         :title="$label('status-preview-title')"
-        v-text="timestamp"
-      />
+      >
+        <span v-text="time" />
+        <span class="hidden sm:inline" v-text="` ${date}`" />
+      </span>
 
-      <theme-toggle class="ml-auto sm:ml-0" />
+      <theme-toggle class="shrink-0 max-[359px]:ml-auto" />
     </div>
   </div>
 </template>
@@ -142,7 +143,8 @@ export default defineComponent({
       renamingWindowId: null as number | null,
       nameBeforeRenaming: '',
       snapshotBeforeRenaming: '',
-      timestamp: '',
+      time: '',
+      date: '',
       timer: undefined as ReturnType<typeof setInterval> | undefined
     }
   },
@@ -207,7 +209,9 @@ export default defineComponent({
     },
 
     updateTime() {
-      this.timestamp = format(new Date(), 'HH:mm dd-MMM-yy')
+      const now = new Date()
+      this.time = format(now, 'HH:mm')
+      this.date = format(now, 'dd-MMM-yy')
     }
   }
 })

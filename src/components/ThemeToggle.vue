@@ -1,6 +1,6 @@
 <template>
   <button
-    class="flex items-center justify-center self-stretch w-7 pointer-coarse:w-9 bg-white text-gray-700 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 hover:text-blue-700 dark:bg-gray-700 dark:text-white dark:ring-0 dark:hover:bg-blue-800 dark:hover:text-white transition-colors rounded-md cursor-pointer"
+    class="flex items-center justify-center self-stretch w-7 min-h-7 pointer-coarse:w-9 pointer-coarse:min-h-9 bg-white text-gray-700 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 hover:text-blue-700 dark:bg-gray-700 dark:text-white dark:ring-0 dark:hover:bg-blue-800 dark:hover:text-white transition-colors rounded-md cursor-pointer"
     :title="$label(`theme-switch-to-${next}`)"
     :aria-label="$label(`theme-switch-to-${next}`)"
     @click="toggle()"

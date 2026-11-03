@@ -1,22 +1,23 @@
 <template>
   <button
-    class="flex items-center bg-green-700 text-white gap-2 py-1 px-3 hover:bg-green-800 transition-colors rounded-md font-semibold cursor-pointer"
+    class="flex items-center bg-green-700 text-white gap-2 py-1 pointer-coarse:py-2 px-3 hover:bg-green-800 transition-colors rounded-md font-semibold cursor-pointer"
     :title="$label('export-title')"
+    :aria-label="$label('export-title')"
     @click.prevent="show = !show"
   >
     <i class="fa fa-file" />
-    <small v-text="$label('export')" />
+    <small class="hidden sm:inline" v-text="$label('export')" />
   </button>
 
-  <base-dialog :show="show" :panel-class="'max-w-6xl h-[80vh]'" @close="show = false">
-    <div class="flex items-start gap-5 w-full h-full">
-      <div class="flex flex-col gap-3 w-64 shrink-0">
+  <base-dialog :show="show" :panel-class="'max-w-6xl h-[85dvh] md:h-[80vh]'" @close="show = false">
+    <div class="flex flex-col md:flex-row md:items-start gap-4 md:gap-5 w-full h-full">
+      <div class="flex flex-col gap-3 w-full md:w-64 shrink-0">
         <h3
           class="text-lg text-center font-semibold text-gray-900 dark:text-white"
           v-text="$label('export-heading')"
         />
 
-        <div class="flex flex-col gap-5 bg-gray-100 dark:bg-gray-800 rounded-md p-3 my-1">
+        <div class="flex flex-col gap-3 md:gap-5 bg-gray-100 dark:bg-gray-800 rounded-md p-3 my-1">
           <input-wrapper :label="$label('export-session-name')" :name="'session-name'">
             <input
               v-model="sessionName"
@@ -83,7 +84,7 @@
       </div>
 
       <div
-        class="flex flex-col bg-gray-50 dark:bg-black border border-gray-200 dark:border-gray-700 overflow-hidden rounded-lg p-4 h-full flex-1 min-w-0"
+        class="flex flex-col bg-gray-50 dark:bg-black border border-gray-200 dark:border-gray-700 overflow-hidden rounded-lg p-3 md:p-4 md:h-full flex-1 min-h-48 min-w-0"
       >
         <div class="flex items-center justify-between">
           <span class="font-medium" v-text="$label('export-script')" />
@@ -98,7 +99,7 @@
         </div>
 
         <pre
-          class="block text-xs font-mono whitespace-pre-wrap overflow-auto scrollbar-hide flex-1 min-h-0 pt-1 mt-4"
+          class="block text-xs font-mono whitespace-pre-wrap overflow-auto scrollbar-hide flex-1 min-h-0 pt-1 mt-3 md:mt-4"
           v-text="generatedScript"
         />
       </div>

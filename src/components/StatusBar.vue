@@ -1,11 +1,12 @@
 <template>
   <div
-    class="flex flex-row gap-2 items-center justify-between px-3 py-2 w-full text-sm bg-white ring-1 ring-gray-200 dark:bg-slate-800 dark:ring-0"
+    class="flex flex-row flex-wrap sm:flex-nowrap gap-2 items-center justify-between px-3 py-2 w-full text-sm bg-white ring-1 ring-gray-200 dark:bg-slate-800 dark:ring-0"
   >
-    <div class="flex items-center gap-2 min-w-0">
+    <div class="flex items-center gap-2 min-w-0 basis-full sm:basis-auto">
       <button
-        class="flex items-center shrink-0 p-2 bg-white text-gray-700 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 hover:text-blue-700 dark:bg-gray-700 dark:text-white dark:ring-0 dark:hover:bg-blue-800 dark:hover:text-white transition-colors rounded-md cursor-pointer"
+        class="flex items-center shrink-0 p-2 pointer-coarse:p-2.5 bg-white text-gray-700 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 hover:text-blue-700 dark:bg-gray-700 dark:text-white dark:ring-0 dark:hover:bg-blue-800 dark:hover:text-white transition-colors rounded-md cursor-pointer"
         :title="$label('window-add')"
+        :aria-label="$label('window-add')"
         @click="$layout.addWindow()"
       >
         <i class="fa fa-plus" />
@@ -17,7 +18,7 @@
             v-if="renamingWindowId === window.id"
             v-focus
             :value="window.name"
-            class="py-1 px-2 w-36 rounded-md font-semibold bg-white dark:bg-slate-700 border border-green-700 focus:outline-none"
+            class="py-1 pointer-coarse:py-2 pointer-coarse:text-base px-2 w-36 rounded-md font-semibold bg-white dark:bg-slate-700 border border-green-700 focus:outline-none"
             maxlength="40"
             :aria-label="$label('window-name-input', { number: index + 1 })"
             @input="rename"
@@ -36,7 +37,7 @@
             :data-active="window.id === $layout.activeWindowId || undefined"
           >
             <button
-              class="flex items-center gap-1.5 py-1 pl-2 cursor-pointer"
+              class="flex items-center gap-1.5 py-1 pointer-coarse:py-2 pl-2 cursor-pointer touch-manipulation"
               :class="$layout.windows.length > 1 ? 'pr-1' : 'pr-2'"
               :title="$label('window-tab-title')"
               @click="$layout.selectWindow(window.id)"
@@ -47,7 +48,7 @@
             </button>
             <button
               v-if="$layout.windows.length > 1"
-              class="flex items-center py-1 pl-1 pr-2 cursor-pointer opacity-60 hover:opacity-100"
+              class="flex items-center py-1 pointer-coarse:py-2 pl-1 pr-2 cursor-pointer opacity-60 hover:opacity-100"
               :title="$label('window-close', { name: window.name })"
               :aria-label="$label('window-close', { name: window.name })"
               @click="$layout.removeWindow(window.id)"
@@ -59,14 +60,14 @@
       </div>
     </div>
 
-    <div class="flex items-center gap-2 shrink-0">
-      <div class="flex items-center gap-2 mx-2">
+    <div class="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto shrink-0">
+      <div class="flex items-center gap-2 sm:mx-2">
         <div class="flex items-center gap-1" :title="$label('status-text-color-title')">
           <label :for="'foreground_color_select'" v-text="$label('status-text-color')" />
           <input
             id="foreground_color_select"
             v-model="$layout.colors.txt"
-            class="w-5 h-5 rounded-xs border-2 border-gray-300 dark:border-gray-700"
+            class="w-5 h-5 pointer-coarse:w-7 pointer-coarse:h-7 rounded-xs border-2 border-gray-300 dark:border-gray-700"
             type="color"
           />
         </div>
@@ -75,20 +76,20 @@
           <input
             id="background_color_select"
             v-model="$layout.colors.bg"
-            class="w-5 h-5 rounded-xs border-2 border-gray-300 dark:border-gray-700"
+            class="w-5 h-5 pointer-coarse:w-7 pointer-coarse:h-7 rounded-xs border-2 border-gray-300 dark:border-gray-700"
             type="color"
           />
         </div>
       </div>
 
       <span
-        class="py-1 px-2 rounded-md border border-gray-300 dark:border-gray-800"
+        class="py-1 px-2 rounded-md border whitespace-nowrap border-gray-300 dark:border-gray-800"
         :style="{ backgroundColor: $layout.colors.bg, color: $layout.colors.txt }"
         :title="$label('status-preview-title')"
         v-text="timestamp"
       />
 
-      <theme-toggle />
+      <theme-toggle class="ml-auto sm:ml-0" />
     </div>
   </div>
 </template>

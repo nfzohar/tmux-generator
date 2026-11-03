@@ -209,6 +209,18 @@ describe.skipIf(!tmuxPath)('generated script in a real tmux server', () => {
     ['three panes side by side', split(0, 'horizontal', [leaf(1), leaf(2), leaf(3)])],
     ['four panes stacked', split(0, 'vertical', [leaf(1), leaf(2), leaf(3), leaf(4)])],
     [
+      'five panes side by side',
+      split(0, 'horizontal', [leaf(1), leaf(2), leaf(3), leaf(4), leaf(5)])
+    ],
+    [
+      'a grid of 3 columns and 2 rows',
+      split(0, 'horizontal', [
+        split(1, 'vertical', [leaf(4), leaf(5)]),
+        split(2, 'vertical', [leaf(6), leaf(7)]),
+        split(3, 'vertical', [leaf(8), leaf(9)])
+      ])
+    ],
+    [
       'a split in the first pane',
       split(0, 'horizontal', [split(1, 'vertical', [leaf(3), leaf(4)]), leaf(2)])
     ],

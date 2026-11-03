@@ -9,7 +9,9 @@ pane in place and every command already running.
 ## Using the builder
 
 - **Split a pane** with the buttons in its header, horizontally (side by side) or
-  vertically (stacked). Right-click a pane for 3-way splits.
+  vertically (stacked). Right-click a pane (or tap its `⋮` button on a touchscreen) for
+  **Select a preset**, common layouts like a main pane with a side stack, or
+  **Custom pane split** to split it into any number of columns and rows, up to 8 each.
 - **Type a command** into a pane. Several lines run one after another.
 - **Windows** are in the bottom left: `+` adds one, click a tab to open it, double-click
   to rename it, `×` to close it.
@@ -118,7 +120,7 @@ selects automatically from `packageManager`.
 yarn install
 yarn dev          # dev server with hot reload
 yarn build        # type-check and production build
-yarn test         # generator tests
+yarn test         # generator and store tests
 yarn lint         # lint and fix files
 yarn format       # format src/ with Prettier
 ```
@@ -131,17 +133,22 @@ Built with Vue 3, Pinia, Tailwind CSS 4 and Vite.
 | `src/stores/layout.ts` | Windows, pane trees, colors and undo history |
 | `src/labels.ts` | Every text shown in the UI, by slug, used as `$label('slug')` in templates |
 | `src/components/PreviewPane.vue` | A pane in the builder, drawn recursively for splits |
+| `src/presets.ts` | The preset layouts, and the grid layout for a column and row count |
+| `src/components/PresetDialog.vue` | Preset picker for splitting a pane |
+| `src/components/SplitDialog.vue` | Column and row counts for splitting a pane into a grid |
 | `src/components/StatusBar.vue` | Window tabs and status bar colors |
 | `src/components/ExportDialog.vue` | Export options, script preview, copy and download |
-| `src/__tests__/` | Generator tests |
+| `src/__tests__/` | Generator and layout store tests |
 
 ### Tests
 
-`yarn test` runs two suites:
+`yarn test` runs three suites:
 
 - **Unit tests** check the generated script line by line: split sizes and order, window
   creation, quoting, export options, and on 200 random layouts that every pane is created
   once and before it's used.
+- **Layout store tests** check that splitting a pane, into a row, a column, a grid or
+  each preset, builds the right pane tree in one undo step.
 - **tmux tests** run generated scripts on a private tmux server and check every window's
   name, every pane's position and size, that each command ran in its own pane, and that
   re-running a script reuses the session while applying new colors. They are skipped

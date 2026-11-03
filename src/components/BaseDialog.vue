@@ -6,7 +6,7 @@
       @click.self="$emit('close')"
     >
       <div
-        class="bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-lg p-6 w-full mx-4"
+        class="bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-lg p-4 sm:p-6 w-full mx-4 max-h-[calc(100dvh-2rem)] overflow-y-auto"
         :class="panelClass"
         role="dialog"
         aria-modal="true"

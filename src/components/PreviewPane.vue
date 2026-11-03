@@ -20,7 +20,7 @@
 
       <div class="flex items-center gap-1 p-2 shrink-0">
         <button
-          class="flex items-center gap-1 p-1 transition-colors rounded-md font-semibold cursor-pointer hover:text-blue-500 text-md"
+          class="flex items-center gap-1 p-1 transition-colors rounded-md font-semibold cursor-pointer hover:text-blue-500 text-md pointer-coarse:p-2"
           :title="$label('pane-split-horizontally-title')"
           tabindex="-1"
           @click="splitIntoPanes('horizontal')"
@@ -30,13 +30,23 @@
         </button>
 
         <button
-          class="flex items-center gap-1 p-1 transition-colors rounded-md font-semibold cursor-pointer hover:text-blue-500 text-md"
+          class="flex items-center gap-1 p-1 transition-colors rounded-md font-semibold cursor-pointer hover:text-blue-500 text-md pointer-coarse:p-2"
           :title="$label('pane-split-vertically-title')"
           tabindex="-1"
           @click="splitIntoPanes('vertical')"
         >
           <i class="fa fa-arrows-up-down" />
           <small class="hidden @sm:inline" v-text="$label('pane-split-vertically')" />
+        </button>
+
+        <button
+          class="hidden pointer-coarse:flex items-center p-2 transition-colors rounded-md font-semibold cursor-pointer hover:text-blue-500 text-md"
+          :title="$label('pane-more-title')"
+          :aria-label="$label('pane-more-title')"
+          tabindex="-1"
+          @click.stop="openContextMenu"
+        >
+          <i class="fa fa-ellipsis-vertical" />
         </button>
       </div>
     </div>
@@ -51,7 +61,15 @@
       @change="$layout.pushHistory(snapshotBeforeEdit)"
     />
 
-    <context-menu ref="menu" :items="actions" @select="onMenuSelect" />
+    <context-menu ref="menu" :items="actions" @select="openDialog = actions[$event].dialog" />
+
+    <preset-dialog
+      :show="openDialog === 'presets'"
+      @select="splitInto"
+      @cancel="openDialog = null"
+    />
+
+    <split-dialog :show="openDialog === 'grid'" @confirm="splitInto" @cancel="openDialog = null" />
   </div>
 
   <div
@@ -66,12 +84,15 @@
 <script lang="ts">
 import { defineComponent, type PropType } from 'vue'
 import ContextMenu from './ContextMenu.vue'
+import SplitDialog from './SplitDialog.vue'
+import PresetDialog from './PresetDialog.vue'
 import type { Direction, Pane } from '../generator'
+import type { PaneShape } from '../presets'
 
 export default defineComponent({
   name: 'PreviewPane',
 
-  components: { ContextMenu },
+  components: { ContextMenu, SplitDialog, PresetDialog },
 
   props: {
     pane: {
@@ -83,19 +104,17 @@ export default defineComponent({
   data() {
     return {
       isFocused: false,
-      snapshotBeforeEdit: ''
+      snapshotBeforeEdit: '',
+      openDialog: null as 'presets' | 'grid' | null
     }
   },
 
   computed: {
-    actions(): { label: string; direction: Direction; paneCount: number }[] {
-      return [2, 3].flatMap((paneCount) =>
-        (['horizontal', 'vertical'] as const).map((direction) => ({
-          label: this.$label(`pane-split-in-${direction}ly`, { count: paneCount }),
-          direction,
-          paneCount
-        }))
-      )
+    actions(): { label: string; dialog: 'presets' | 'grid' }[] {
+      return [
+        { label: this.$label('pane-presets'), dialog: 'presets' },
+        { label: this.$label('pane-split-grid'), dialog: 'grid' }
+      ]
     },
 
     isPaneGroup(): boolean {
@@ -107,13 +126,13 @@ export default defineComponent({
   },
 
   methods: {
-    splitIntoPanes(direction: Direction, paneCount = 2) {
-      this.$layout.splitPane(this.pane.id, direction, paneCount)
+    splitIntoPanes(direction: Direction) {
+      this.$layout.splitPane(this.pane.id, direction)
     },
 
-    onMenuSelect(index: number) {
-      const { direction, paneCount } = this.actions[index]
-      this.splitIntoPanes(direction, paneCount)
+    splitInto(shape: PaneShape) {
+      this.openDialog = null
+      this.$layout.splitPaneInto(this.pane.id, shape)
     },
 
     setCommand(event: Event) {

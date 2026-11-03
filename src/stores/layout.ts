@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import type { Direction, Pane, TmuxWindow } from '../generator'
 import { label } from '../labels'
+import type { PaneShape } from '../presets'
 
 const newPane = (id: number): Pane => ({
   id,
@@ -99,12 +100,35 @@ export const layout = defineStore('layout', {
     splitPane(id: number, direction: Direction, paneCount = 2) {
       const pane = this.findPane(id)
 
-      if (!pane || pane.items.length) {
+      if (!pane || pane.items.length || paneCount < 2) {
         return
       }
 
       this.pushHistory()
+      this.divide(pane, direction, paneCount)
+    },
 
+    // Splits a pane into a preset or grid layout, in one undo step
+    splitPaneInto(id: number, shape: PaneShape) {
+      const pane = this.findPane(id)
+
+      if (!pane || pane.items.length || !shape) {
+        return
+      }
+
+      this.pushHistory()
+      this.build(pane, shape)
+    },
+
+    build(pane: Pane, shape: PaneShape) {
+      if (shape) {
+        this.divide(pane, shape.direction, shape.items.length)
+        pane.items.forEach((child, index) => this.build(child, shape.items[index]))
+      }
+    },
+
+    // Turns a leaf into a group of paneCount new leaves, without an undo step
+    divide(pane: Pane, direction: Direction, paneCount: number) {
       const items = Array.from({ length: paneCount }, () => newPane(this.nextPaneId++))
       // The original pane lives on as the first child, so keep its command there
       items[0].command = pane.command

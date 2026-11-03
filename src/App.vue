@@ -1,31 +1,35 @@
 <template>
   <div
-    class="flex flex-col h-screen bg-gray-200 dark:bg-slate-900 gap-3 text-gray-900 dark:text-white"
+    class="flex flex-col h-dvh bg-gray-200 dark:bg-slate-900 gap-3 text-gray-900 dark:text-white"
   >
     <div
       class="flex flex-row gap-2 items-center justify-between p-3 w-full bg-white ring-1 ring-gray-200 dark:bg-slate-800 dark:ring-0"
     >
       <h1 class="block w-full min-w-0 truncate">
-        <strong v-text="$label('app-title')" /> | <small v-text="$label('app-subtitle')" />
+        <strong v-text="$label('app-title')" /><span class="hidden sm:inline">
+          | <small v-text="$label('app-subtitle')" />
+        </span>
       </h1>
 
-      <div class="flex items-center gap-2">
+      <div class="flex items-center gap-2 shrink-0">
         <button
-          class="flex items-center gap-2 py-1 px-2 bg-white text-gray-700 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 hover:text-blue-700 dark:bg-gray-700 dark:text-white dark:ring-0 dark:hover:bg-blue-800 dark:hover:text-white transition-colors rounded-md font-semibold cursor-pointer"
+          class="flex items-center gap-2 py-1 pointer-coarse:py-2 px-2 bg-white text-gray-700 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 hover:text-blue-700 dark:bg-gray-700 dark:text-white dark:ring-0 dark:hover:bg-blue-800 dark:hover:text-white transition-colors rounded-md font-semibold cursor-pointer"
           :title="$label('undo-title')"
+          :aria-label="$label('undo-title')"
           @click="undoLastChange()"
         >
           <i class="fa fa-undo" />
-          <small v-text="$label('undo')" />
+          <small class="hidden sm:inline" v-text="$label('undo')" />
         </button>
 
         <button
-          class="flex items-center gap-2 py-1 px-3 bg-white text-gray-700 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 hover:text-blue-700 dark:bg-gray-700 dark:text-white dark:ring-0 dark:hover:bg-blue-800 dark:hover:text-white transition-colors rounded-md font-semibold cursor-pointer"
+          class="flex items-center gap-2 py-1 pointer-coarse:py-2 px-3 bg-white text-gray-700 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 hover:text-blue-700 dark:bg-gray-700 dark:text-white dark:ring-0 dark:hover:bg-blue-800 dark:hover:text-white transition-colors rounded-md font-semibold cursor-pointer"
           :title="$label('reset-title')"
+          :aria-label="$label('reset-title')"
           @click.prevent="confirmingReset = true"
         >
           <i class="fa fa-delete-left" />
-          <small v-text="$label('reset')" />
+          <small class="hidden sm:inline" v-text="$label('reset')" />
         </button>
 
         <export-dialog :windows="$layout.windows" />
